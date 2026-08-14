@@ -16,10 +16,10 @@ export const translations = {
     you: 'SİZ',
 
     // Toolbar
-    newWorkOrder: '+ Yeni PCBA İş Emri',
+    newWorkOrder: 'Yeni PCBA İş Emri',
     lineManager: 'EMS Hatları & Matris',
-    shiftSettings: '⏰ Vardiya Ayarları',
-    maintenance: '+ Bakım Planla',
+    shiftSettings: 'Vardiya Ayarları',
+    maintenance: 'Bakım Planla',
     autoSchedule: 'Otomatik Çizelgele',
     searchPlaceholder: 'İş emri veya operasyon ara...',
     allBatches: 'Tüm Partiler',
@@ -129,7 +129,7 @@ export const translations = {
     operatingHours: 'Günlük Çalışma Saati',
     hourlyRate: 'Saatlik Ücret ($/saat)',
     accentColor: 'Vurgu Rengi',
-    addCenterBtn: '+ EMS Merkezi Ekle',
+    addCenterBtn: 'EMS Merkezi Ekle',
     tableColor: 'Renk',
     tableName: 'Hat / İş Merkezi Adı',
     tableCode: 'Kod',
@@ -141,7 +141,7 @@ export const translations = {
     fromFamily: 'Mevcut Ürün Ailesi',
     toFamily: 'Sonraki Ürün Ailesi',
     setupPenalty: 'Hazırlık Cezası (Dakika)',
-    saveRule: '💾 Değişim Kuralını Kaydet',
+    saveRule: 'Değişim Kuralını Kaydet',
 
     // Maintenance / Downtime Modal
     maintenanceTitle: 'EMS Hat Bakımı Planla',
@@ -165,7 +165,7 @@ export const translations = {
     originalDuration: 'Mevcut Toplam Süre',
     part1Duration: '1. Parça Süresi',
     part2Duration: '2. Parça Süresi',
-    splitBtn: '✂️ Operasyonu Böl ve Sırala',
+    splitBtn: 'Operasyonu Böl ve Sırala',
 
     // Auto Schedule Modal
     autoScheduleTitle: 'Otomatik Çizelgeleme & Optimizasyon',
@@ -173,7 +173,7 @@ export const translations = {
     weightMakespan: 'Makespan (Toplam Süre) Ağırlığı',
     weightSetup: 'Hazırlık Süresi Azaltma Ağırlığı',
     weightOtd: 'Teslim Tarihine Sadakat Ağırlığı',
-    runOptimizer: '🚀 Optimizasyonu Başlat',
+    runOptimizer: 'Optimizasyonu Başlat',
     optimizing: 'Optimize Ediliyor...',
 
     // Shift Manager Modal
@@ -189,22 +189,22 @@ export const translations = {
     presetTwo12Shifts: '2 Vardiya (12 Saatlik)',
     presetTwo12ShiftsDesc: '08:00-20:00 (Gündüz), 20:00-08:00 (Gece)',
     customShifts: 'Tanımlı Vardiya Listesi',
-    addShift: '+ Yeni Vardiya Ekle',
+    addShift: 'Yeni Vardiya Ekle',
     shiftName: 'Vardiya Adı',
     startTime: 'Başlangıç',
     endTime: 'Bitiş',
     activeDays: 'Çalışma Günleri',
     shiftColor: 'Renk',
-    saveShiftPattern: '💾 Vardiya Düzenini Kaydet ve Uygula',
+    saveShiftPattern: 'Vardiya Düzenini Kaydet ve Uygula',
     savingShifts: 'Vardiya Düzeni Kaydediliyor...',
     shiftsSavedSuccess: 'Vardiya düzeni başarıyla güncellendi!',
     offShiftNotice: 'Vardiya Dışı (Çalışma Yok)',
 
     // Work Order Management & Deletion
-    workOrderListBtn: '📋 İş Emirleri',
+    workOrderListBtn: 'İş Emirleri',
     workOrderManagerTitle: 'PCBA İş Emirleri Yönetimi',
     workOrderManagerDesc: 'Kayıtlı tüm iş emirlerini görüntüleyin, çizelgede filtreleyin veya iş emrini bağlı tüm operasyonlarıyla birlikte silin.',
-    deleteWorkOrderFull: '🗑️ İş Emrini Sil (Tüm Operasyonlar)',
+    deleteWorkOrderFull: 'İş Emrini Sil (Tüm Operasyonlar)',
     deleteWorkOrderConfirm: 'iş emrini ve bağlı tüm operasyonlarını silmek istediğinize emin misiniz?',
     filterInGantt: 'Çizelgede Göster',
     allWorkOrdersCount: 'Toplam İş Emri',
@@ -229,10 +229,10 @@ export const translations = {
     you: 'YOU',
 
     // Toolbar
-    newWorkOrder: '+ New PCBA Work Order',
+    newWorkOrder: 'New PCBA Work Order',
     lineManager: 'EMS Lines & Matrices',
-    shiftSettings: '⏰ Shift Settings',
-    maintenance: '+ Maintenance',
+    shiftSettings: 'Shift Settings',
+    maintenance: 'Maintenance',
     autoSchedule: 'Auto-Schedule',
     searchPlaceholder: 'Search PCBA op or WO#...',
     allBatches: 'All Batches',
@@ -342,7 +342,7 @@ export const translations = {
     operatingHours: 'Daily Operating Hours',
     hourlyRate: 'Hourly Rate ($/hr)',
     accentColor: 'Accent Color',
-    addCenterBtn: '+ Add EMS Center',
+    addCenterBtn: 'Add EMS Center',
     tableColor: 'Color',
     tableName: 'Line / Work Center Name',
     tableCode: 'Code',
@@ -354,7 +354,7 @@ export const translations = {
     fromFamily: 'From Product Family',
     toFamily: 'To Product Family',
     setupPenalty: 'Setup Penalty (Minutes)',
-    saveRule: '💾 Save Changeover Rule',
+    saveRule: 'Save Changeover Rule',
 
     // Maintenance / Downtime Modal
     maintenanceTitle: 'Schedule EMS Line Maintenance',
@@ -378,7 +378,7 @@ export const translations = {
     originalDuration: 'Current Total Duration',
     part1Duration: 'Part 1 Duration',
     part2Duration: 'Part 2 Duration',
-    splitBtn: '✂️ Split & Reschedule',
+    splitBtn: 'Split & Reschedule',
 
     // Auto Schedule Modal
     autoScheduleTitle: 'Heuristic & AI Auto-Scheduler',
@@ -386,7 +386,7 @@ export const translations = {
     weightMakespan: 'Makespan Optimization Weight',
     weightSetup: 'Setup Time Reduction Weight',
     weightOtd: 'Due Date Fidelity Weight',
-    runOptimizer: '🚀 Run Auto-Scheduler',
+    runOptimizer: 'Run Auto-Scheduler',
     optimizing: 'Optimizing...',
 
     // Shift Manager Modal
@@ -402,22 +402,22 @@ export const translations = {
     presetTwo12Shifts: '2 Shifts (12h Day/Night)',
     presetTwo12ShiftsDesc: '08:00-20:00 (Day), 20:00-08:00 (Night)',
     customShifts: 'Configured Shift List',
-    addShift: '+ Add New Shift',
+    addShift: 'Add New Shift',
     shiftName: 'Shift Name',
     startTime: 'Start Time',
     endTime: 'End Time',
     activeDays: 'Active Days',
     shiftColor: 'Color',
-    saveShiftPattern: '💾 Save & Apply Shift Pattern',
+    saveShiftPattern: 'Save & Apply Shift Pattern',
     savingShifts: 'Applying Shift Pattern...',
     shiftsSavedSuccess: 'Shift pattern successfully updated!',
     offShiftNotice: 'Off-Shift (Non-Working)',
 
     // Work Order Management & Deletion
-    workOrderListBtn: '📋 Work Orders',
+    workOrderListBtn: 'Work Orders',
     workOrderManagerTitle: 'PCBA Work Orders Management',
     workOrderManagerDesc: 'View active work orders, filter within the Gantt timeline, or delete entire work orders with all operations.',
-    deleteWorkOrderFull: '🗑️ Delete Work Order (All Ops)',
+    deleteWorkOrderFull: 'Delete Work Order (All Ops)',
     deleteWorkOrderConfirm: 'Are you sure you want to delete this work order and all of its associated operations?',
     filterInGantt: 'Filter in Gantt',
     allWorkOrdersCount: 'Total Work Orders',

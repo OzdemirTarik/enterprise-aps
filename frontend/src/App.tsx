@@ -13,6 +13,7 @@ import { ShiftManagerModal } from './components/Modals/ShiftManagerModal';
 import { WorkOrderManagerModal } from './components/Modals/WorkOrderManagerModal';
 import { SplitOperationModal } from './components/Modals/SplitOperationModal';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { AlertTriangle } from 'lucide-react';
 
 export const App: React.FC = () => {
   const fetchSchedule = useScheduleStore((s) => s.fetchSchedule);
@@ -71,7 +72,7 @@ export const App: React.FC = () => {
       {/* Error Alert Toast */}
       {error && (
         <div className="fixed top-14 right-4 bg-rose-950/90 border border-rose-600 rounded-lg p-3 text-xs text-rose-200 shadow-2xl z-50 flex items-center gap-2 max-w-md">
-          <span>⚠️</span>
+          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
           <span className="flex-1">{error}</span>
         </div>
       )}

@@ -12,6 +12,7 @@ import {
   Cpu,
   Calendar,
   Layers,
+  Building2,
 } from 'lucide-react';
 import { format, isValid } from 'date-fns';
 
@@ -174,8 +175,9 @@ export const WorkOrderManagerModal: React.FC = () => {
                             {wo.productCode}
                           </span>
                           {wo.customerName && (
-                            <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-medium border border-slate-700">
-                              🏢 {wo.customerName}
+                            <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-medium border border-slate-700 flex items-center gap-1">
+                              <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span>{wo.customerName}</span>
                             </span>
                           )}
                           <span
