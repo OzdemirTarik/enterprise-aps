@@ -59,6 +59,11 @@ interface ScheduleStore {
   isSplitModalOpen: boolean;
   splitTargetOperationId: string | null;
   isAutoScheduleOpen: boolean;
+  isShortcutsOpen: boolean;
+
+  // Viewport Scroll Triggers
+  scrollToNowTrigger: number;
+  scrollToOperationId: string | null;
 
   // History for Undo/Redo
   undoStack: ScheduleHistoryState[];
@@ -85,6 +90,9 @@ interface ScheduleStore {
   setIsWorkOrderManagerOpen: (open: boolean) => void;
   setIsSplitModalOpen: (open: boolean, operationId?: string | null) => void;
   setIsAutoScheduleOpen: (open: boolean) => void;
+  setIsShortcutsOpen: (open: boolean) => void;
+  triggerScrollToNow: () => void;
+  triggerScrollToOperation: (opId: string | null) => void;
   updateShiftPattern: (shifts: ShiftSchedule[]) => Promise<void>;
 
   // Mutations
@@ -139,7 +147,10 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   presence: {},
   kpis: null,
 
-  zoomLevel: 'day',
+  zoomLevel:
+    (typeof window !== 'undefined' &&
+      (localStorage.getItem('aps_zoom') as 'hour' | 'day' | 'week' | 'month')) ||
+    'day',
   timelineStart: new Date(new Date().setHours(6, 0, 0, 0)),
   timelineEnd: new Date(new Date().setDate(new Date().getDate() + 3)),
   selectedOperationId: null,
@@ -159,7 +170,10 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   workOrderFilter: null,
   machineFilter: null,
   statusFilter: null,
-  workCenterCategory: 'ALL',
+  workCenterCategory:
+    (typeof window !== 'undefined' &&
+      (localStorage.getItem('aps_cat') as 'ALL' | 'SMT' | 'THT' | 'TEST' | 'COAT')) ||
+    'ALL',
   language: (typeof window !== 'undefined' && (localStorage.getItem('aps_lang') as Language)) || 'tr',
 
   contextMenu: null,
@@ -171,6 +185,9 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   isSplitModalOpen: false,
   splitTargetOperationId: null,
   isAutoScheduleOpen: false,
+  isShortcutsOpen: false,
+  scrollToNowTrigger: 0,
+  scrollToOperationId: null,
 
   undoStack: [],
   redoStack: [],
@@ -237,6 +254,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       const startMs = timelineStart.getTime();
       const currentDays = (timelineEnd.getTime() - startMs) / 86400000;
       if (currentDays < 30) {
+        if (typeof window !== 'undefined') localStorage.setItem('aps_zoom', level);
         set({
           zoomLevel: level,
           timelineEnd: new Date(startMs + 32 * 86400000),
@@ -244,13 +262,17 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         return;
       }
     }
+    if (typeof window !== 'undefined') localStorage.setItem('aps_zoom', level);
     set({ zoomLevel: level });
   },
   setSearchQuery: (query) => set({ searchQuery: query }),
   setWorkOrderFilter: (id) => set({ workOrderFilter: id }),
   setMachineFilter: (id) => set({ machineFilter: id }),
   setStatusFilter: (status) => set({ statusFilter: status }),
-  setWorkCenterCategory: (category) => set({ workCenterCategory: category }),
+  setWorkCenterCategory: (category) => {
+    if (typeof window !== 'undefined') localStorage.setItem('aps_cat', category);
+    set({ workCenterCategory: category });
+  },
   setLanguage: (lang) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('aps_lang', lang);
@@ -267,6 +289,9 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   setIsSplitModalOpen: (open, opId = null) =>
     set({ isSplitModalOpen: open, splitTargetOperationId: opId }),
   setIsAutoScheduleOpen: (open) => set({ isAutoScheduleOpen: open }),
+  setIsShortcutsOpen: (open) => set({ isShortcutsOpen: open }),
+  triggerScrollToNow: () => set((s) => ({ scrollToNowTrigger: s.scrollToNowTrigger + 1 })),
+  triggerScrollToOperation: (opId) => set({ scrollToOperationId: opId }),
 
   updateShiftPattern: async (newShifts) => {
     try {

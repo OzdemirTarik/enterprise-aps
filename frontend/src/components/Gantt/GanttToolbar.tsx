@@ -18,6 +18,9 @@ import {
   ShieldAlert,
   ClipboardList,
   Trash2,
+  Compass,
+  HelpCircle,
+  X,
 } from 'lucide-react';
 
 export const GanttToolbar: React.FC = () => {
@@ -49,6 +52,8 @@ export const GanttToolbar: React.FC = () => {
   const setIsAddDowntimeOpen = useScheduleStore((state) => state.setIsAddDowntimeOpen);
   const setIsShiftManagerOpen = useScheduleStore((state) => state.setIsShiftManagerOpen);
   const setIsAutoScheduleOpen = useScheduleStore((state) => state.setIsAutoScheduleOpen);
+  const setIsShortcutsOpen = useScheduleStore((state) => state.setIsShortcutsOpen);
+  const triggerScrollToNow = useScheduleStore((state) => state.triggerScrollToNow);
   const fetchSchedule = useScheduleStore((state) => state.fetchSchedule);
 
   const workOrderList = Object.values(workOrders);
@@ -142,16 +147,26 @@ export const GanttToolbar: React.FC = () => {
 
       {/* Right Group: Search, Filters, Undo/Redo & Zoom */}
       <div className="flex items-center space-x-2">
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
+        {/* Search Bar with Clear Button */}
+        <div className="relative flex items-center">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-slate-900/90 border border-slate-700/80 rounded pl-8 pr-2.5 py-1 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-500 w-44"
+            className="bg-slate-900/90 border border-slate-700/80 rounded pl-8 pr-7 py-1 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-500 w-44 transition-all focus:w-56"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-200 p-0.5 rounded"
+              title="Clear search"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         {/* Filter by Work Order */}
@@ -270,6 +285,16 @@ export const GanttToolbar: React.FC = () => {
           </button>
         </div>
 
+        {/* Jump to Now */}
+        <button
+          type="button"
+          onClick={triggerScrollToNow}
+          className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-rose-400 hover:text-rose-300 border border-slate-700 transition-colors"
+          title={t('jumpToNow')}
+        >
+          <Compass className="w-3.5 h-3.5" />
+        </button>
+
         {/* Refresh */}
         <button
           onClick={() => fetchSchedule()}
@@ -277,6 +302,16 @@ export const GanttToolbar: React.FC = () => {
           title={t('reload')}
         >
           <RotateCcw className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Keyboard Shortcuts Guide */}
+        <button
+          type="button"
+          onClick={() => setIsShortcutsOpen(true)}
+          className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-cyan-300 border border-slate-700 transition-colors"
+          title={t('keyboardShortcuts')}
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

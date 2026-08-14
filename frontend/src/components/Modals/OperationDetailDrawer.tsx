@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import { scheduleApi } from '../../services/api';
-import { Layers, Trash2, Save, X } from 'lucide-react';
+import { Layers, Trash2, Save, X, Lock, Calendar, Check } from 'lucide-react';
+import { format, isValid } from 'date-fns';
+import { tr, enUS } from 'date-fns/locale';
+
+const PRESET_COLORS = ['#06b6d4', '#f59e0b', '#10b981', '#8b5cf6', '#f43f5e', '#0284c7'];
 
 export const OperationDetailDrawer: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const selectedOperationId = useScheduleStore((s) => s.selectedOperationId);
   const setSelectedOperationId = useScheduleStore((s) => s.setSelectedOperationId);
   const operations = useScheduleStore((s) => s.operations);
@@ -29,6 +33,8 @@ export const OperationDetailDrawer: React.FC = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [precedences, setPrecedences] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  const dateLocale = language === 'tr' ? tr : enUS;
 
   useEffect(() => {
     if (operation) {
@@ -83,6 +89,12 @@ export const OperationDetailDrawer: React.FC = () => {
     (o) => o.workOrderId === operation.workOrderId && o.id !== operation.id
   );
 
+  const parsedStart = new Date(operation.plannedStartTime);
+  const validStartTime = isValid(parsedStart) ? parsedStart : new Date();
+  const calculatedEndTime = new Date(
+    validStartTime.getTime() + (Number(setupDuration) + Number(duration)) * 60000
+  );
+
   return (
     <aside className="w-88 bg-slate-900 border-l border-slate-800 flex flex-col h-full z-40 text-xs shadow-2xl animate-in slide-in-from-right duration-200 select-none">
       {/* Header */}
@@ -92,24 +104,43 @@ export const OperationDetailDrawer: React.FC = () => {
             <span className="text-[10px] font-mono font-bold text-cyan-400">
               {workOrder?.orderNumber || operation.workOrderId}
             </span>
-            <span className="text-[9px] bg-slate-800 text-slate-300 px-1 py-0.5 rounded border border-slate-700">
+            <span className="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700 font-mono">
               {operation.productType}
             </span>
           </div>
-          <h2 className="text-sm font-bold text-slate-100 truncate max-w-[220px]">
+          <h2 className="text-sm font-bold text-slate-100 truncate max-w-[220px] mt-0.5">
             {operation.name}
           </h2>
         </div>
         <button
           onClick={() => setSelectedOperationId(null)}
-          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
+          className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
+      {/* Live Calculated Timeline Schedule Card */}
+      <div className="mx-4 mt-3 p-3 rounded-lg bg-slate-950/90 border border-slate-800 space-y-1.5">
+        <div className="flex items-center justify-between text-slate-400 text-[11px]">
+          <span className="flex items-center gap-1">
+            <Calendar className="w-3 h-3 text-cyan-400" />
+            <span>{format(validStartTime, 'dd MMM yyyy, HH:mm', { locale: dateLocale })}</span>
+          </span>
+          <span className="text-slate-600">→</span>
+          <span className="font-mono text-cyan-300 font-semibold">
+            {format(calculatedEndTime, 'HH:mm')}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1 border-t border-slate-800/80">
+          <span>{t('setupDuration')}: {setupDuration}m</span>
+          <span>{t('runDuration')}: {duration}m</span>
+          <span className="text-amber-400 font-bold">Top: {Number(setupDuration) + Number(duration)}m</span>
+        </div>
+      </div>
+
       {/* Form Body */}
-      <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-4 space-y-3.5 custom-scrollbar">
         <div>
           <label className="block text-slate-400 font-semibold mb-1">{t('opName')}</label>
           <input
@@ -126,7 +157,7 @@ export const OperationDetailDrawer: React.FC = () => {
           <select
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
+            className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none cursor-pointer"
           >
             {Object.values(resources).map((r) => (
               <option key={r.id} value={r.id}>
@@ -141,7 +172,7 @@ export const OperationDetailDrawer: React.FC = () => {
           <select
             value={productType}
             onChange={(e) => setProductType(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
+            className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none cursor-pointer"
           >
             <option value="Automotive-ECU">Automotive-ECU</option>
             <option value="IoT-Gateway">IoT-Gateway</option>
@@ -189,7 +220,7 @@ export const OperationDetailDrawer: React.FC = () => {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
+              className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none cursor-pointer"
             >
               <option value="Planned">{t('statusPlanned')}</option>
               <option value="InProgress">{t('statusInProgress')}</option>
@@ -201,56 +232,65 @@ export const OperationDetailDrawer: React.FC = () => {
 
           <div>
             <label className="block text-slate-400 font-semibold mb-1">{t('stageColor')}</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={colorCode}
-                onChange={(e) => setColorCode(e.target.value)}
-                className="w-7 h-7 bg-transparent border-0 cursor-pointer rounded"
-              />
-              <span className="font-mono text-slate-400 text-[11px]">{colorCode}</span>
+            <div className="flex items-center gap-1.5">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColorCode(c)}
+                  className={`w-5 h-5 rounded-full transition-transform ${
+                    colorCode === c ? 'scale-125 ring-2 ring-white shadow-sm' : 'opacity-70 hover:opacity-100'
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
             </div>
           </div>
         </div>
 
         {/* Lock Toggle */}
-        <div className="flex items-center gap-2 pt-1 bg-slate-950/60 p-2 rounded border border-slate-800">
+        <div className="flex items-center gap-2 pt-1 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
           <input
             type="checkbox"
             id="isLockedCheck"
             checked={isLocked}
             onChange={(e) => setIsLocked(e.target.checked)}
-            className="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
+            className="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500 cursor-pointer"
           />
-          <label htmlFor="isLockedCheck" className="text-slate-300 font-medium cursor-pointer">
-            🔒 {t('lockInSequence')}
+          <label htmlFor="isLockedCheck" className="text-slate-300 font-medium cursor-pointer flex items-center gap-1.5">
+            <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>{t('lockInSequence')}</span>
           </label>
         </div>
 
-        {/* Precedences DAG Checklist */}
+        {/* Precedences DAG Chips */}
         <div className="border-t border-slate-800 pt-3">
-          <label className="block text-slate-400 font-semibold mb-2 flex items-center gap-1">
+          <label className="block text-slate-400 font-semibold mb-2 flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-cyan-400" />
             <span>{t('dagPrecedences')}</span>
           </label>
           {otherOperationsInWo.length === 0 ? (
             <div className="text-slate-500 italic">{t('noOtherOps')}</div>
           ) : (
-            <div className="space-y-1.5 max-h-36 overflow-y-auto bg-slate-950 p-2 rounded border border-slate-800">
-              {otherOperationsInWo.map((otherOp) => (
-                <label
-                  key={otherOp.id}
-                  className="flex items-center gap-2 text-slate-300 cursor-pointer hover:text-cyan-300"
-                >
-                  <input
-                    type="checkbox"
-                    checked={precedences.includes(otherOp.id)}
-                    onChange={() => handleTogglePrecedence(otherOp.id)}
-                    className="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
-                  />
-                  <span className="truncate">{otherOp.name}</span>
-                </label>
-              ))}
+            <div className="space-y-1.5 max-h-36 overflow-y-auto bg-slate-950 p-2 rounded-lg border border-slate-800 custom-scrollbar">
+              {otherOperationsInWo.map((otherOp) => {
+                const isSelectedPrecedence = precedences.includes(otherOp.id);
+                return (
+                  <button
+                    key={otherOp.id}
+                    type="button"
+                    onClick={() => handleTogglePrecedence(otherOp.id)}
+                    className={`w-full flex items-center justify-between p-1.5 rounded text-left transition-colors ${
+                      isSelectedPrecedence
+                        ? 'bg-cyan-950/70 border border-cyan-500/60 text-cyan-200'
+                        : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    <span className="truncate pr-2">{otherOp.name}</span>
+                    {isSelectedPrecedence && <Check className="w-3.5 h-3.5 text-cyan-400 shrink-0" />}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -260,7 +300,7 @@ export const OperationDetailDrawer: React.FC = () => {
           <button
             type="submit"
             disabled={isSaving}
-            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold py-2 rounded shadow-lg shadow-cyan-950 transition-colors flex items-center justify-center gap-1.5"
+            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold py-2 rounded-lg shadow-lg shadow-cyan-950 transition-colors flex items-center justify-center gap-1.5"
           >
             <Save className="w-3.5 h-3.5" />
             <span>{isSaving ? t('saving') : t('saveDag')}</span>
@@ -273,7 +313,7 @@ export const OperationDetailDrawer: React.FC = () => {
                 deleteOperation(operation.id);
               }
             }}
-            className="w-full bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/50 font-semibold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
+            className="w-full bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/50 font-semibold py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>{t('deleteOp')}</span>
@@ -296,7 +336,7 @@ export const OperationDetailDrawer: React.FC = () => {
                 await fetchSchedule();
               }
             }}
-            className="w-full bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-600/60 font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+            className="w-full bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-600/60 font-bold py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm"
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-400" />
             <span>{t('deleteWorkOrderFull')}</span>

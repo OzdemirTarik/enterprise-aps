@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Operation } from '../../types/schedule';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { Lock } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface GanttOperationBlockProps {
   operation: Operation;
@@ -15,6 +17,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   const timelineStart = useScheduleStore((s) => s.timelineStart);
   const selectedOperationId = useScheduleStore((s) => s.selectedOperationId);
   const hoveredOperationId = useScheduleStore((s) => s.hoveredOperationId);
+  const scrollToOperationId = useScheduleStore((s) => s.scrollToOperationId);
   const setSelectedOperationId = useScheduleStore((s) => s.setSelectedOperationId);
   const setHoveredOperationId = useScheduleStore((s) => s.setHoveredOperationId);
   const rescheduleOptimistic = useScheduleStore((s) => s.rescheduleOptimistic);
@@ -43,6 +46,11 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
 
   const isSelected = selectedOperationId === operation.id;
   const isHovered = hoveredOperationId === operation.id;
+  const isTargetFocused = scrollToOperationId === operation.id;
+
+  // Tooltip live times
+  const tooltipStartMs = startMs + dragOffsetMinutes * 60000;
+  const tooltipEndMs = tooltipStartMs + (operation.setupDurationMinutes + effectiveDuration) * 60000;
 
   // Search & Filter matching
   const matchesSearch =
@@ -56,6 +64,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     (!statusFilter || operation.status === statusFilter);
 
   const isDimmed = !matchesSearch || !matchesFilter;
+  const isSearchHit = !!searchQuery && matchesSearch;
 
   // Move Dragging (Horizontal + Snap)
   const handleMouseDownMove = (e: React.MouseEvent) => {
@@ -69,7 +78,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaPx = moveEvent.clientX - startClientX;
-      let rawDeltaMin = deltaPx / minuteWidth;
+      const rawDeltaMin = deltaPx / minuteWidth;
       // 15-minute magnetic snapping
       const snappedDeltaMin = Math.round(rawDeltaMin / 15) * 15;
       currentOffsetMin = snappedDeltaMin;
@@ -108,7 +117,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaPx = moveEvent.clientX - startClientX;
-      let rawDeltaMin = deltaPx / minuteWidth;
+      const rawDeltaMin = deltaPx / minuteWidth;
       const snappedDeltaMin = Math.round(rawDeltaMin / 15) * 15;
       const newDuration = operation.durationMinutes + snappedDeltaMin;
       if (newDuration >= 15) {
@@ -145,6 +154,8 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   };
 
   const getStatusBorder = () => {
+    if (isTargetFocused) return 'border-cyan-400 ring-4 ring-cyan-400 shadow-2xl shadow-cyan-500/80 animate-pulse';
+    if (isSearchHit) return 'border-cyan-400 ring-2 ring-cyan-400/80 shadow-lg shadow-cyan-950';
     if (operation.status === 'Delayed') return 'border-rose-500 shadow-rose-950/40';
     if (operation.status === 'InProgress') return 'border-emerald-400 shadow-emerald-950/40';
     if (operation.status === 'Completed') return 'border-indigo-400 opacity-75';
@@ -167,7 +178,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
       className={`absolute top-1 bottom-1 rounded-md border text-xs cursor-move select-none transition-shadow group ${getStatusBorder()} ${
         isSelected ? 'ring-2 ring-sky-400 ring-offset-1 ring-offset-slate-900 shadow-lg z-30' : 'z-20'
       } ${isHovered ? 'brightness-110 shadow-md' : ''} ${
-        isDragging || isResizingRight ? 'opacity-90 shadow-2xl scale-[1.01]' : ''
+        isDragging || isResizingRight ? 'opacity-95 shadow-2xl scale-[1.01] z-40' : ''
       } ${isDimmed ? 'opacity-25 grayscale-[60%]' : ''}`}
       style={{
         left: `${leftPosition}px`,
@@ -175,6 +186,34 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
         backgroundColor: '#0f172a',
       }}
     >
+      {/* Real-time Floating Drag / Resize Micro-Tooltip */}
+      {(isDragging || isResizingRight) && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-cyan-400 rounded-md px-2.5 py-1 text-[11px] font-mono text-cyan-300 shadow-2xl pointer-events-none flex items-center gap-1.5 whitespace-nowrap backdrop-blur-md">
+          <span className="font-bold">
+            {format(new Date(tooltipStartMs), 'dd MMM HH:mm')} → {format(new Date(tooltipEndMs), 'HH:mm')}
+          </span>
+          <span className="text-slate-400">({effectiveDuration}m)</span>
+          {dragOffsetMinutes !== 0 && (
+            <span
+              className={`px-1 rounded text-[10px] font-bold ${
+                dragOffsetMinutes > 0 ? 'text-amber-400 bg-amber-950/80' : 'text-emerald-400 bg-emerald-950/80'
+              }`}
+            >
+              {dragOffsetMinutes > 0 ? `+${dragOffsetMinutes}m` : `${dragOffsetMinutes}m`}
+            </span>
+          )}
+          {resizeDeltaMinutes !== 0 && (
+            <span
+              className={`px-1 rounded text-[10px] font-bold ${
+                resizeDeltaMinutes > 0 ? 'text-cyan-400 bg-cyan-950/80' : 'text-rose-400 bg-rose-950/80'
+              }`}
+            >
+              {resizeDeltaMinutes > 0 ? `+${resizeDeltaMinutes}m` : `${resizeDeltaMinutes}m`}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="flex h-full w-full overflow-hidden rounded-[5px]">
         {/* Sequence Setup Time Zone (Hatched) */}
         {operation.setupDurationMinutes > 0 && (
@@ -205,7 +244,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
           }}
         >
           <div className="flex items-center gap-1.5 min-w-0 truncate">
-            {operation.isLocked && <span className="text-amber-400 text-xs">🔒</span>}
+            {operation.isLocked && <Lock className="w-3 h-3 text-amber-400 shrink-0 inline" />}
             <span className="font-mono text-[11px] font-bold text-sky-300 shrink-0">
               {operation.workOrderNumber || operation.workOrderId}
             </span>

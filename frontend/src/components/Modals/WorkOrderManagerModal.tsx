@@ -13,6 +13,7 @@ import {
   Calendar,
   Layers,
   Building2,
+  Clock,
 } from 'lucide-react';
 import { format, isValid } from 'date-fns';
 
@@ -156,102 +157,143 @@ export const WorkOrderManagerModal: React.FC = () => {
               const woOps = Object.values(operations).filter((o) => o.workOrderId === wo.id);
               const isDeleting = deletingId === wo.id;
 
-              return (
-                <div
-                  key={wo.id}
-                  className="bg-slate-950 border border-slate-800/90 hover:border-slate-700 rounded-xl p-4 transition-all shadow-sm space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
-                        <Cpu className="w-4 h-4 text-cyan-400" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono font-bold text-sm text-cyan-300">
-                            {wo.orderNumber}
-                          </span>
-                          <span className="text-[10px] bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded font-mono font-semibold">
-                            {wo.productCode}
-                          </span>
-                          {wo.customerName && (
-                            <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-medium border border-slate-700 flex items-center gap-1">
-                              <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span>{wo.customerName}</span>
-                            </span>
-                          )}
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
-                              wo.priority === 1
-                                ? 'bg-rose-950 text-rose-300 border border-rose-800'
-                                : wo.priority === 2
-                                ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                                : 'bg-slate-800 text-slate-400 border border-slate-700'
-                            }`}
-                          >
-                            P{wo.priority || 2}
-                          </span>
+                const totalDurationMin = woOps.reduce(
+                  (sum, o) => sum + o.durationMinutes + o.setupDurationMinutes,
+                  0
+                );
+                const totalHours = Math.floor(totalDurationMin / 60);
+                const remMin = totalDurationMin % 60;
+
+                const nowMs = Date.now();
+                const dueMs = new Date(wo.dueDate).getTime();
+                const diffDays = isValid(new Date(wo.dueDate))
+                  ? Math.ceil((dueMs - nowMs) / 86400000)
+                  : null;
+
+                return (
+                  <div
+                    key={wo.id}
+                    className="bg-slate-950 border border-slate-800/90 hover:border-slate-700 rounded-xl p-4 transition-all shadow-sm space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0">
+                          <Cpu className="w-4 h-4 text-cyan-400" />
                         </div>
-                        <p className="text-xs text-slate-300 mt-1 font-medium">{wo.productName}</p>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono font-bold text-sm text-cyan-300">
+                              {wo.orderNumber}
+                            </span>
+                            <span className="text-[10px] bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 px-2 py-0.5 rounded font-mono font-semibold">
+                              {wo.productCode}
+                            </span>
+                            {wo.customerName && (
+                              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-medium border border-slate-700 flex items-center gap-1">
+                                <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span>{wo.customerName}</span>
+                              </span>
+                            )}
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
+                                wo.priority === 1
+                                  ? 'bg-rose-950 text-rose-300 border border-rose-800'
+                                  : wo.priority === 2
+                                  ? 'bg-amber-950 text-amber-300 border border-amber-800'
+                                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+                              }`}
+                            >
+                              P{wo.priority || 2}
+                            </span>
+
+                            {/* Due Date Countdown Badge */}
+                            {diffDays !== null && (
+                              <span
+                                className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                                  diffDays > 0
+                                    ? 'bg-emerald-950/70 border border-emerald-700/60 text-emerald-300'
+                                    : diffDays === 0
+                                    ? 'bg-amber-950/70 border border-amber-700/60 text-amber-300'
+                                    : 'bg-rose-950/70 border border-rose-700/60 text-rose-300'
+                                }`}
+                              >
+                                {diffDays > 0
+                                  ? `${diffDays} ${t('daysRemaining')}`
+                                  : diffDays === 0
+                                  ? t('dueToday')
+                                  : `${Math.abs(diffDays)} ${t('overdue')}`}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-300 mt-1 font-medium">{wo.productName}</p>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleFilterInGantt(wo.id)}
+                          className="bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 hover:border-cyan-500/50 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                          title={t('filterInGantt')}
+                        >
+                          <Filter className="w-3.5 h-3.5" />
+                          <span>{t('filterInGantt')}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={isDeleting}
+                          onClick={() => handleDelete(wo.id, wo.orderNumber, woOps.length)}
+                          className="bg-rose-950/80 hover:bg-rose-900 disabled:opacity-50 text-rose-300 border border-rose-700/60 hover:border-rose-500 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+                          title={t('deleteWorkOrderFull')}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                          <span>
+                            {isDeleting
+                              ? language === 'tr'
+                                ? 'Siliniyor...'
+                                : 'Deleting...'
+                              : t('deleteWorkOrderFull')}
+                          </span>
+                        </button>
                       </div>
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleFilterInGantt(wo.id)}
-                        className="bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 hover:border-cyan-500/50 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                        title={t('filterInGantt')}
-                      >
-                        <Filter className="w-3.5 h-3.5" />
-                        <span>{t('filterInGantt')}</span>
-                      </button>
+                    {/* Metadata Row */}
+                    <div className="flex items-center gap-4 text-[11px] text-slate-400 border-t border-slate-800/80 pt-2.5 flex-wrap">
+                      <div className="flex items-center gap-1">
+                        <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="font-semibold text-slate-300">{woOps.length}</span>
+                        <span>{t('routingSteps')}</span>
+                      </div>
 
-                      <button
-                        type="button"
-                        disabled={isDeleting}
-                        onClick={() => handleDelete(wo.id, wo.orderNumber, woOps.length)}
-                        className="bg-rose-950/80 hover:bg-rose-900 disabled:opacity-50 text-rose-300 border border-rose-700/60 hover:border-rose-500 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
-                        title={t('deleteWorkOrderFull')}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                        <span>
-                          {isDeleting
-                            ? language === 'tr'
-                              ? 'Siliniyor...'
-                              : 'Deleting...'
-                            : t('deleteWorkOrderFull')}
+                      <div className="flex items-center gap-1 font-mono">
+                        <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>{t('totalWoDuration')}: </span>
+                        <span className="text-cyan-300 font-semibold">
+                          {totalHours > 0 ? `${totalHours}s ` : ''}
+                          {remMin}dk
                         </span>
-                      </button>
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Metadata Row */}
-                  <div className="flex items-center gap-4 text-[11px] text-slate-400 border-t border-slate-800/80 pt-2.5 flex-wrap">
-                    <div className="flex items-center gap-1">
-                      <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                      <span className="font-semibold text-slate-300">{woOps.length}</span>
-                      <span>{t('routingSteps')}</span>
-                    </div>
+                      <div>
+                        <span>{t('quantity')}: </span>
+                        <span className="font-mono font-bold text-slate-200">{wo.quantity} adet</span>
+                      </div>
 
-                    <div>
-                      <span>{t('quantity')}: </span>
-                      <span className="font-mono font-bold text-slate-200">{wo.quantity} adet</span>
-                    </div>
+                      <div className="flex items-center gap-1 font-mono">
+                        <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{t('releaseDate')}: </span>
+                        <span className="text-slate-300">{formatDateSafe(wo.releaseDate)}</span>
+                      </div>
 
-                    <div className="flex items-center gap-1 font-mono">
-                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{t('releaseDate')}: </span>
-                      <span className="text-slate-300">{formatDateSafe(wo.releaseDate)}</span>
+                      <div className="flex items-center gap-1 font-mono">
+                        <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                        <span>{t('dueDate')}: </span>
+                        <span className="text-amber-300 font-semibold">{formatDateSafe(wo.dueDate)}</span>
+                      </div>
                     </div>
-
-                    <div className="flex items-center gap-1 font-mono">
-                      <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                      <span>{t('dueDate')}: </span>
-                      <span className="text-amber-300 font-semibold">{formatDateSafe(wo.dueDate)}</span>
-                    </div>
-                  </div>
 
                   {/* Operations preview pills */}
                   {woOps.length > 0 && (

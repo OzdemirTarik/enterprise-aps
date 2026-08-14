@@ -260,6 +260,62 @@ export const ShiftManagerModal: React.FC = () => {
             </div>
           </div>
 
+          {/* 24-Hour Visual Shift Band Preview */}
+          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{t('shiftCoverage24h')}</span>
+              </span>
+              <span className="text-slate-500 font-mono text-[10px]">00:00 — 24:00</span>
+            </div>
+
+            <div className="relative h-6 bg-slate-900 rounded-md overflow-hidden border border-slate-800/80">
+              {/* Hour Grid Markers */}
+              {[4, 8, 12, 16, 20].map((hr) => (
+                <div
+                  key={hr}
+                  className="absolute top-0 bottom-0 border-l border-slate-800/80 text-[8px] font-mono text-slate-600 pl-0.5 pointer-events-none z-0"
+                  style={{ left: `${(hr / 24) * 100}%` }}
+                >
+                  {hr < 10 ? `0${hr}` : hr}h
+                </div>
+              ))}
+
+              {/* Render Shift Bands */}
+              {localShifts.map((shift, idx) => {
+                if (!shift.startTime || !shift.endTime) return null;
+                const [startH, startM] = shift.startTime.split(':').map(Number);
+                const [endH, endM] = shift.endTime.split(':').map(Number);
+                const startMin = (startH || 0) * 60 + (startM || 0);
+                let endMin = (endH || 0) * 60 + (endM || 0);
+                if (endMin <= startMin) endMin += 1440; // overnight span
+
+                const leftPercent = (startMin / 1440) * 100;
+                const widthPercent = ((endMin - startMin) / 1440) * 100;
+
+                return (
+                  <div
+                    key={idx}
+                    className="absolute top-0.5 bottom-0.5 rounded px-1.5 flex items-center justify-between text-[9px] font-bold text-white font-mono truncate shadow-sm transition-all z-10"
+                    style={{
+                      left: `${leftPercent % 100}%`,
+                      width: `${Math.min(100, widthPercent)}%`,
+                      backgroundColor: `${shift.colorCode || '#06b6d4'}bb`,
+                      border: `1px solid ${shift.colorCode || '#06b6d4'}`,
+                    }}
+                    title={`${shift.name} (${shift.startTime} - ${shift.endTime})`}
+                  >
+                    <span className="truncate">{shift.name}</span>
+                    <span className="opacity-90 text-[8px] shrink-0 ml-1">
+                      {shift.startTime}-{shift.endTime}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Shift Rows */}
           <div className="border-t border-slate-800 pt-4 space-y-3">
             <div className="flex items-center justify-between">

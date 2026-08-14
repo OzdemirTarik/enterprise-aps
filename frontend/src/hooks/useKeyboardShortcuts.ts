@@ -10,10 +10,19 @@ export function useKeyboardShortcuts() {
   const operations = useScheduleStore((state) => state.operations);
   const locks = useScheduleStore((state) => state.locks);
   const activeLockUser = useScheduleStore((state) => state.activeLockUser);
+  const triggerScrollToNow = useScheduleStore((state) => state.triggerScrollToNow);
+  const setIsShortcutsOpen = useScheduleStore((state) => state.setIsShortcutsOpen);
+  const setIsCreateWorkOrderOpen = useScheduleStore((state) => state.setIsCreateWorkOrderOpen);
+  const setIsResourceManagerOpen = useScheduleStore((state) => state.setIsResourceManagerOpen);
+  const setIsAddDowntimeOpen = useScheduleStore((state) => state.setIsAddDowntimeOpen);
+  const setIsShiftManagerOpen = useScheduleStore((state) => state.setIsShiftManagerOpen);
+  const setIsWorkOrderManagerOpen = useScheduleStore((state) => state.setIsWorkOrderManagerOpen);
+  const setIsAutoScheduleOpen = useScheduleStore((state) => state.setIsAutoScheduleOpen);
+  const setIsSplitModalOpen = useScheduleStore((state) => state.setIsSplitModalOpen);
 
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
-      // Avoid shortcuts if typing in input or textarea
+      // Avoid shortcuts if typing in input, textarea, or select
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
@@ -22,6 +31,7 @@ export function useKeyboardShortcuts() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
+        return;
       }
 
       // Redo: Ctrl+Y or Ctrl+Shift+Z
@@ -31,11 +41,35 @@ export function useKeyboardShortcuts() {
       ) {
         e.preventDefault();
         redo();
+        return;
       }
 
-      // Escape: Deselect
+      // 'T' or 't' key: Jump to Now
+      if (e.key.toLowerCase() === 't' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        triggerScrollToNow();
+        return;
+      }
+
+      // '?' key: Open Shortcuts guide
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setIsShortcutsOpen(true);
+        return;
+      }
+
+      // Escape: Deselect and close all active modals/drawers
       if (e.key === 'Escape') {
         setSelectedOperationId(null);
+        setIsShortcutsOpen(false);
+        setIsCreateWorkOrderOpen(false);
+        setIsResourceManagerOpen(false);
+        setIsAddDowntimeOpen(false);
+        setIsShiftManagerOpen(false);
+        setIsWorkOrderManagerOpen(false);
+        setIsAutoScheduleOpen(false);
+        setIsSplitModalOpen(false);
+        return;
       }
 
       // 'L' key: Toggle lock on selected operation's machine
@@ -59,5 +93,22 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, setSelectedOperationId, selectedOperationId, operations, locks, activeLockUser]);
+  }, [
+    undo,
+    redo,
+    setSelectedOperationId,
+    selectedOperationId,
+    operations,
+    locks,
+    activeLockUser,
+    triggerScrollToNow,
+    setIsShortcutsOpen,
+    setIsCreateWorkOrderOpen,
+    setIsResourceManagerOpen,
+    setIsAddDowntimeOpen,
+    setIsShiftManagerOpen,
+    setIsWorkOrderManagerOpen,
+    setIsAutoScheduleOpen,
+    setIsSplitModalOpen,
+  ]);
 }

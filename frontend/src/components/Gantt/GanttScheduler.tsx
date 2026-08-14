@@ -53,11 +53,66 @@ export const GanttScheduler: React.FC = () => {
     return true;
   });
 
+  const scrollToNowTrigger = useScheduleStore((s) => s.scrollToNowTrigger);
+  const scrollToOperationId = useScheduleStore((s) => s.scrollToOperationId);
+  const searchQuery = useScheduleStore((s) => s.searchQuery);
+  const operations = useScheduleStore((s) => s.operations);
+
   const handleTimelineScroll = () => {
     if (scrollContainerRef.current && sidebarScrollRef.current) {
       sidebarScrollRef.current.scrollTop = scrollContainerRef.current.scrollTop;
     }
   };
+
+  // Smooth scroll to current time
+  React.useEffect(() => {
+    if (scrollToNowTrigger > 0 && scrollContainerRef.current) {
+      const nowMs = Date.now();
+      const elapsedMinutes = (nowMs - timelineStart.getTime()) / 60000;
+      const targetLeft = elapsedMinutes * minuteWidth - scrollContainerRef.current.clientWidth / 2;
+      scrollContainerRef.current.scrollTo({
+        left: Math.max(0, targetLeft),
+        behavior: 'smooth',
+      });
+    }
+  }, [scrollToNowTrigger, minuteWidth, timelineStart]);
+
+  // Smooth scroll to targeted operation
+  React.useEffect(() => {
+    if (scrollToOperationId && scrollContainerRef.current) {
+      const targetOp = operations[scrollToOperationId];
+      if (targetOp) {
+        const opStartMs = new Date(targetOp.plannedStartTime).getTime();
+        const elapsedMinutes = (opStartMs - timelineStart.getTime()) / 60000;
+        const targetLeft = elapsedMinutes * minuteWidth - scrollContainerRef.current.clientWidth / 3;
+        scrollContainerRef.current.scrollTo({
+          left: Math.max(0, targetLeft),
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [scrollToOperationId, operations, minuteWidth, timelineStart]);
+
+  // Auto-focus on first search match
+  React.useEffect(() => {
+    if (searchQuery.trim().length >= 2 && scrollContainerRef.current) {
+      const matchingOp = Object.values(operations).find(
+        (o) =>
+          o.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          o.workOrderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          o.productType.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (matchingOp) {
+        const opStartMs = new Date(matchingOp.plannedStartTime).getTime();
+        const elapsedMinutes = (opStartMs - timelineStart.getTime()) / 60000;
+        const targetLeft = elapsedMinutes * minuteWidth - scrollContainerRef.current.clientWidth / 3;
+        scrollContainerRef.current.scrollTo({
+          left: Math.max(0, targetLeft),
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [searchQuery, operations, minuteWidth, timelineStart]);
 
   return (
     <div

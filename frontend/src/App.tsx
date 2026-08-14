@@ -12,6 +12,7 @@ import { AddDowntimeModal } from './components/Modals/AddDowntimeModal';
 import { ShiftManagerModal } from './components/Modals/ShiftManagerModal';
 import { WorkOrderManagerModal } from './components/Modals/WorkOrderManagerModal';
 import { SplitOperationModal } from './components/Modals/SplitOperationModal';
+import { KeyboardShortcutsModal } from './components/Modals/KeyboardShortcutsModal';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { AlertTriangle } from 'lucide-react';
 
@@ -60,6 +61,7 @@ export const App: React.FC = () => {
       <AddDowntimeModal />
       <SplitOperationModal />
       <AutoScheduleModal />
+      <KeyboardShortcutsModal />
 
       {/* Loading Overlay */}
       {isLoading && (
