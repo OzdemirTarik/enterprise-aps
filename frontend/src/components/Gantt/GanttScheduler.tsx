@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
-import { isValid } from 'date-fns';
+import { isValid, startOfDay } from 'date-fns';
 import { GanttTimelineRuler } from './GanttTimelineRuler';
 import { GanttSidebar } from './GanttSidebar';
 import { GanttRow } from './GanttRow';
@@ -21,15 +21,18 @@ export const GanttScheduler: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
-  const timelineStart = isValid(rawTimelineStart)
+  const validStart = isValid(rawTimelineStart)
     ? rawTimelineStart
-    : new Date(new Date().setHours(6, 0, 0, 0));
-  const timelineEnd = isValid(rawTimelineEnd)
+    : new Date(new Date().setHours(0, 0, 0, 0));
+  const validEnd = isValid(rawTimelineEnd)
     ? rawTimelineEnd
-    : new Date(new Date().setDate(new Date().getDate() + 3));
+    : new Date(new Date().setDate(new Date().getDate() + 4));
+
+  const timelineStart = startOfDay(validStart);
+  const timelineEnd = validEnd;
 
   // Zoom scale: pixel width per minute
-  const minuteWidth = zoomLevel === 'hour' ? 4.0 : zoomLevel === 'day' ? 1.4 : 0.4;
+  const minuteWidth = zoomLevel === 'hour' ? 3.0 : zoomLevel === 'day' ? 1.2 : 0.45;
 
   const totalMinutes = Math.max(1440, (timelineEnd.getTime() - timelineStart.getTime()) / 60000);
   const canvasWidth = Math.max(1200, totalMinutes * minuteWidth);

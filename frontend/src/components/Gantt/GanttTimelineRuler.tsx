@@ -18,12 +18,16 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
   const rawTimelineEnd = useScheduleStore((state) => state.timelineEnd);
   const shifts = useScheduleStore((state) => state.shifts) || [];
 
-  const timelineStart = isValid(rawTimelineStart)
+  const validStart = isValid(rawTimelineStart)
     ? rawTimelineStart
-    : new Date(new Date().setHours(6, 0, 0, 0));
-  const timelineEnd = isValid(rawTimelineEnd)
+    : new Date(new Date().setHours(0, 0, 0, 0));
+  const validEnd = isValid(rawTimelineEnd)
     ? rawTimelineEnd
-    : new Date(new Date().setDate(new Date().getDate() + 3));
+    : new Date(new Date().setDate(new Date().getDate() + 4));
+
+  // Align start to start of day for perfectly synchronized day & hour boundaries
+  const timelineStart = startOfDay(validStart);
+  const timelineEnd = validEnd;
 
   const hourWidth = minuteWidth * 60;
   const totalHours = Math.max(24, Math.min(720, differenceInHours(timelineEnd, timelineStart)));
@@ -31,8 +35,16 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
 
   const dateLocale = language === 'tr' ? tr : enUS;
 
+  // Adaptive label step to prevent overlapping on zoom out
+  // hourWidth >= 75px: 1h steps (01:00, 02:00...)
+  // hourWidth >= 40px: 2h steps (00:00, 02:00, 04:00...)
+  // hourWidth >= 20px: 4h steps (00:00, 04:00, 08:00, 12:00...)
+  // hourWidth < 20px:  6h steps (00:00, 06:00, 12:00, 18:00...)
+  const hourStep =
+    hourWidth >= 75 ? 1 : hourWidth >= 40 ? 2 : hourWidth >= 20 ? 4 : 6;
+
   const days = Array.from({ length: daysCount }).map((_, idx) => {
-    const dayDate = addDays(startOfDay(timelineStart), idx);
+    const dayDate = addDays(timelineStart, idx);
     return {
       date: dayDate,
       label: format(dayDate, 'EEE, dd MMM yyyy', { locale: dateLocale }),
@@ -43,7 +55,6 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
   const hours = Array.from({ length: totalHours }).map((_, idx) => {
     const hourDate = addHours(timelineStart, idx);
     const hourNum = hourDate.getHours();
-    // In date-fns: 0 is Sunday, 1 is Monday... convert to 1=Monday..7=Sunday
     const jsDay = getDay(hourDate);
     const isoDayNumber = jsDay === 0 ? 7 : jsDay;
 
@@ -58,10 +69,14 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
       return shiftStartHour === hourNum;
     });
 
+    const isStepHour = hourNum % hourStep === 0;
+    const shouldShowText = isStepHour || !!matchingShift;
+
     return {
       date: hourDate,
       hourNum,
       matchingShift,
+      shouldShowText,
       label: format(hourDate, 'HH:00'),
       offset: idx * hourWidth,
     };
@@ -77,7 +92,7 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
         {days.map((day, idx) => (
           <div
             key={idx}
-            className="flex items-center px-3 border-r border-slate-800 bg-[#141e33] font-semibold tracking-wider text-cyan-400 shrink-0 capitalize"
+            className="flex items-center px-3 border-r border-slate-800 bg-[#141e33] font-semibold tracking-wider text-cyan-400 shrink-0 capitalize truncate"
             style={{ width: `${day.width}px` }}
           >
             {day.label}
@@ -85,7 +100,7 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
         ))}
       </div>
 
-      {/* Bottom Layer: Hours & Dynamic Shift Bands */}
+      {/* Bottom Layer: Hours & Dynamic Shift Bands with Adaptive Density */}
       <div className="flex h-7 text-[11px] font-mono text-slate-400 relative">
         {hours.map((hr, idx) => {
           const shift = hr.matchingShift;
@@ -96,9 +111,9 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
           return (
             <div
               key={idx}
-              className={`flex items-center justify-between px-1.5 border-r shrink-0 transition-colors ${
+              className={`flex items-center justify-between px-1 border-r shrink-0 transition-colors overflow-hidden ${
                 shift
-                  ? 'border-r-2 bg-slate-800/30 font-semibold'
+                  ? 'border-r-2 bg-slate-800/40 font-semibold'
                   : 'border-slate-800/50'
               }`}
               style={{
@@ -106,16 +121,31 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
                 borderRightColor: shift ? shiftColor : undefined,
               }}
             >
-              <span className={shift ? 'text-slate-200 font-bold' : 'text-slate-400'}>
-                {hr.label}
-              </span>
-              {shift && hourWidth > 45 && (
+              {hr.shouldShowText ? (
                 <span
-                  className="text-[9px] font-bold uppercase tracking-tighter truncate max-w-[110px] px-1 py-0.5 rounded"
+                  className={`truncate ${
+                    shift
+                      ? 'text-cyan-300 font-bold'
+                      : hr.hourNum === 0
+                      ? 'text-amber-400 font-bold'
+                      : 'text-slate-400'
+                  }`}
+                  style={{ fontSize: hourWidth < 35 ? '10px' : '11px' }}
+                >
+                  {hr.label}
+                </span>
+              ) : (
+                <span className="text-slate-700/50 text-[9px] mx-auto select-none">·</span>
+              )}
+
+              {/* Shift Name Badge when enough space */}
+              {shift && hourWidth >= 65 && (
+                <span
+                  className="text-[9px] font-bold uppercase tracking-tighter truncate max-w-[90px] px-1 py-0.5 rounded ml-1"
                   style={{
-                    backgroundColor: `${shiftColor}20`,
+                    backgroundColor: `${shiftColor}25`,
                     color: shiftColor,
-                    border: `1px solid ${shiftColor}40`,
+                    border: `1px solid ${shiftColor}50`,
                   }}
                   title={`${shiftName} (${shift.startTime || ''} - ${shift.endTime || ''})`}
                 >
