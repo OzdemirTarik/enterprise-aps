@@ -13,8 +13,11 @@ import {
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
   private isConnecting = false;
+  private isExplicitlyStopped = false;
+  private retryTimeout: any = null;
 
   public async start(): Promise<void> {
+    this.isExplicitlyStopped = false;
     if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
       return;
     }
@@ -23,22 +26,49 @@ class SignalRService {
     this.isConnecting = true;
 
     try {
-      this.connection = new signalR.HubConnectionBuilder()
-        .withUrl('/hubs/scheduling', {
-          skipNegotiation: false,
-          transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
-        })
-        .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
-        .configureLogging(signalR.LogLevel.Warning)
-        .build();
+      if (!this.connection) {
+        this.connection = new signalR.HubConnectionBuilder()
+          .withUrl('/hubs/scheduling', {
+            skipNegotiation: false,
+            transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
+          })
+          .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+          .configureLogging({
+            log: (logLevel, message) => {
+              if (
+                message.includes('stopped during negotiation') ||
+                message.includes('AbortError') ||
+                message.includes('Canceled')
+              ) {
+                return;
+              }
+              if (logLevel >= signalR.LogLevel.Error) {
+                console.error('[APS SignalR]', message);
+              }
+            },
+          })
+          .build();
 
-      this.registerHandlers();
+        this.registerHandlers();
+      }
 
-      await this.connection.start();
-      console.log('[APS SignalR] Connected successfully.');
-    } catch (err) {
-      console.warn('[APS SignalR] Connection error, retrying in 5s...', err);
-      setTimeout(() => this.start(), 5000);
+      if (this.connection.state === signalR.HubConnectionState.Disconnected) {
+        await this.connection.start();
+        console.log('[APS SignalR] Connected successfully.');
+      }
+    } catch (err: any) {
+      const isNegotiationAbort =
+        err?.message?.includes('stopped during negotiation') ||
+        err?.name === 'AbortError' ||
+        this.isExplicitlyStopped;
+
+      if (!isNegotiationAbort) {
+        console.warn('[APS SignalR] Connection error, retrying in 5s...', err);
+        if (!this.isExplicitlyStopped) {
+          clearTimeout(this.retryTimeout);
+          this.retryTimeout = setTimeout(() => this.start(), 5000);
+        }
+      }
     } finally {
       this.isConnecting = false;
     }
@@ -122,8 +152,14 @@ class SignalRService {
   }
 
   public async stop(): Promise<void> {
+    this.isExplicitlyStopped = true;
+    clearTimeout(this.retryTimeout);
     if (this.connection) {
-      await this.connection.stop();
+      try {
+        await this.connection.stop();
+      } catch {
+        // Ignore stop abort errors
+      }
       this.connection = null;
     }
   }
