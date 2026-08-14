@@ -3,7 +3,7 @@ import { Operation } from '../../types/schedule';
 import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Lock, Link2, Flame } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 
 interface GanttOperationBlockProps {
   operation: Operation;
@@ -223,7 +223,8 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
         <div className="absolute -top-11 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-cyan-400 rounded-md px-2.5 py-1 text-[11px] font-mono text-cyan-300 shadow-2xl pointer-events-none flex flex-col items-center gap-0.5 whitespace-nowrap backdrop-blur-md">
           <div className="flex items-center gap-1.5">
             <span className="font-bold">
-              {format(new Date(tooltipStartMs), 'dd MMM HH:mm')} → {format(new Date(tooltipEndMs), 'HH:mm')}
+              {isValid(new Date(tooltipStartMs)) ? format(new Date(tooltipStartMs), 'dd MMM HH:mm') : ''} →{' '}
+              {isValid(new Date(tooltipEndMs)) ? format(new Date(tooltipEndMs), 'HH:mm') : ''}
             </span>
             <span className="text-slate-400">({effectiveDuration}m)</span>
             {dragOffsetMinutes !== 0 && (

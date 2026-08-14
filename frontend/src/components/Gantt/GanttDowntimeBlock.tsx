@@ -1,6 +1,7 @@
 import React from 'react';
 import { ResourceDowntime } from '../../types/schedule';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface GanttDowntimeBlockProps {
   downtime: ResourceDowntime;
@@ -49,7 +50,7 @@ export const GanttDowntimeBlock: React.FC<GanttDowntimeBlockProps> = ({
       })}`}
     >
       <div className="flex items-center gap-1.5 truncate">
-        <span className="text-amber-400">⚠️</span>
+        <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
         <span className="truncate">{downtime.reason}</span>
       </div>
 
@@ -63,7 +64,7 @@ export const GanttDowntimeBlock: React.FC<GanttDowntimeBlockProps> = ({
         className="opacity-0 group-hover:opacity-100 hover:bg-amber-600/40 rounded p-0.5 text-amber-300 transition-opacity"
         title="Remove Maintenance"
       >
-        ✕
+        <X className="w-3 h-3" />
       </button>
     </div>
   );
