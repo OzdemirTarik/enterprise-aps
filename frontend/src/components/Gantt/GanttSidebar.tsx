@@ -1,5 +1,6 @@
 import React from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { scheduleApi } from '../../services/api';
 import { Lock, Unlock, HardDrive, Cpu, Layers, Activity, ShieldAlert } from 'lucide-react';
 
@@ -8,6 +9,7 @@ interface GanttSidebarProps {
 }
 
 export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
+  const { t } = useTranslation();
   const resources = useScheduleStore((state) => state.resources);
   const locks = useScheduleStore((state) => state.locks);
   const kpis = useScheduleStore((state) => state.kpis);
@@ -51,9 +53,9 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
       <div className="h-14 bg-[#141e33] border-b border-slate-800 px-4 flex items-center justify-between text-xs font-semibold text-slate-300">
         <div className="flex items-center space-x-2">
           <HardDrive className="w-4 h-4 text-cyan-400" />
-          <span className="uppercase tracking-wider">EMS Centers ({resourceList.length})</span>
+          <span className="uppercase tracking-wider">{t('workCenters')} ({resourceList.length})</span>
         </div>
-        <span className="text-[10px] text-slate-400 uppercase font-mono">Utilization</span>
+        <span className="text-[10px] text-slate-400 uppercase font-mono">{t('utilization')}</span>
       </div>
 
       {/* Resource Rows */}
@@ -107,10 +109,10 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
                           ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                           : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                       }`}
-                      title={`Locked by ${lock.lockedByUserName}`}
+                      title={`${t('lockedBy')} ${lock.lockedByUserName}`}
                     >
                       <Lock className="w-2.5 h-2.5" />
-                      {isLockedByMe ? 'YOU' : lock.lockedByUserName.split(' ')[0]}
+                      {isLockedByMe ? t('you') : lock.lockedByUserName.split(' ')[0]}
                     </span>
                   )}
 
@@ -122,10 +124,10 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
                     }`}
                     title={
                       isLockedByOther
-                        ? `Locked by ${lock.lockedByUserName}`
+                        ? `${t('lockedBy')} ${lock.lockedByUserName}`
                         : isLockedByMe
-                        ? 'Release lock'
-                        : 'Acquire lock on this machine'
+                        ? t('releaseLock')
+                        : t('acquireLock')
                     }
                   >
                     {isLockedByMe ? (

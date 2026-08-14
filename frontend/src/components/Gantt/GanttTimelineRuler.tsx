@@ -1,6 +1,8 @@
 import React from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { addHours, format, differenceInHours, startOfDay, addDays } from 'date-fns';
+import { tr, enUS } from 'date-fns/locale';
 
 interface GanttTimelineRulerProps {
   minuteWidth: number;
@@ -11,6 +13,7 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
   minuteWidth,
   canvasWidth,
 }) => {
+  const { t, language } = useTranslation();
   const timelineStart = useScheduleStore((state) => state.timelineStart);
   const timelineEnd = useScheduleStore((state) => state.timelineEnd);
 
@@ -18,11 +21,13 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
   const totalHours = Math.max(24, differenceInHours(timelineEnd, timelineStart));
   const daysCount = Math.ceil(totalHours / 24);
 
+  const dateLocale = language === 'tr' ? tr : enUS;
+
   const days = Array.from({ length: daysCount }).map((_, idx) => {
     const dayDate = addDays(startOfDay(timelineStart), idx);
     return {
       date: dayDate,
-      label: format(dayDate, 'EEE, dd MMM yyyy'),
+      label: format(dayDate, 'EEE, dd MMM yyyy', { locale: dateLocale }),
       width: 24 * hourWidth,
     };
   });
@@ -32,9 +37,9 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
     const hourNum = hourDate.getHours();
 
     let shiftBadge = '';
-    if (hourNum === 8) shiftBadge = 'SHIFT 1 (MORNING)';
-    if (hourNum === 16) shiftBadge = 'SHIFT 2 (EVENING)';
-    if (hourNum === 0) shiftBadge = 'SHIFT 3 (NIGHT)';
+    if (hourNum === 8) shiftBadge = t('shift1');
+    if (hourNum === 16) shiftBadge = t('shift2');
+    if (hourNum === 0) shiftBadge = t('shift3');
 
     return {
       date: hourDate,
@@ -55,7 +60,7 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
         {days.map((day, idx) => (
           <div
             key={idx}
-            className="flex items-center px-3 border-r border-slate-800 bg-[#141e33] font-semibold tracking-wider text-sky-400 shrink-0"
+            className="flex items-center px-3 border-r border-slate-800 bg-[#141e33] font-semibold tracking-wider text-cyan-400 shrink-0 capitalize"
             style={{ width: `${day.width}px` }}
           >
             {day.label}
@@ -77,8 +82,8 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
               {hr.label}
             </span>
             {hr.shiftBadge && hourWidth > 60 && (
-              <span className="text-[9px] font-bold text-amber-400/80 uppercase tracking-tighter truncate max-w-[80px]">
-                {hr.shiftBadge.split(' ')[0]}
+              <span className="text-[9px] font-bold text-amber-400/80 uppercase tracking-tighter truncate max-w-[90px]">
+                {hr.shiftBadge.split(' ')[0]} {hr.shiftBadge.split(' ')[1] || ''}
               </span>
             )}
           </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import {
   Plus,
   Settings,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export const GanttToolbar: React.FC = () => {
+  const { t } = useTranslation();
   const zoomLevel = useScheduleStore((state) => state.zoomLevel);
   const setZoomLevel = useScheduleStore((state) => state.setZoomLevel);
   const workOrders = useScheduleStore((state) => state.workOrders);
@@ -43,12 +45,12 @@ export const GanttToolbar: React.FC = () => {
 
   const workOrderList = Object.values(workOrders);
 
-  const categories: Array<{ id: 'ALL' | 'SMT' | 'THT' | 'TEST' | 'COAT'; label: string; icon: any }> = [
-    { id: 'ALL', label: 'All Centers (8)', icon: Layers },
-    { id: 'SMT', label: 'SMT Lines (2)', icon: Cpu },
-    { id: 'THT', label: 'THT & Soldering (2)', icon: Layers },
-    { id: 'TEST', label: 'Test & Inspection (2)', icon: Activity },
-    { id: 'COAT', label: 'Coating & Router (2)', icon: ShieldAlert },
+  const categories: Array<{ id: 'ALL' | 'SMT' | 'THT' | 'TEST' | 'COAT'; labelKey: any; icon: any }> = [
+    { id: 'ALL', labelKey: 'allCenters', icon: Layers },
+    { id: 'SMT', labelKey: 'smtLines', icon: Cpu },
+    { id: 'THT', labelKey: 'thtLines', icon: Layers },
+    { id: 'TEST', labelKey: 'testStations', icon: Activity },
+    { id: 'COAT', labelKey: 'coatingRouter', icon: ShieldAlert },
   ];
 
   return (
@@ -60,25 +62,25 @@ export const GanttToolbar: React.FC = () => {
           className="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-medium shadow-sm transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
-          <span>+ New PCBA Work Order</span>
+          <span>{t('newWorkOrder')}</span>
         </button>
 
         <button
           onClick={() => setIsResourceManagerOpen(true)}
           className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
-          title="Manage EMS Work Centers & Changeover Matrices"
+          title={t('lineManager')}
         >
           <Settings className="w-3.5 h-3.5 text-cyan-400" />
-          <span>EMS Lines & Matrices</span>
+          <span>{t('lineManager')}</span>
         </button>
 
         <button
           onClick={() => setIsAddDowntimeOpen(true)}
           className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition-colors"
-          title="Schedule SMT Squeegee Wipe or Maintenance"
+          title={t('maintenance')}
         >
           <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-          <span>+ Maintenance</span>
+          <span>{t('maintenance')}</span>
         </button>
 
         <button
@@ -86,7 +88,7 @@ export const GanttToolbar: React.FC = () => {
           className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition-colors"
         >
           <Play className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Auto-Schedule</span>
+          <span>{t('autoSchedule')}</span>
         </button>
       </div>
 
@@ -106,7 +108,7 @@ export const GanttToolbar: React.FC = () => {
               }`}
             >
               <Icon className="w-3 h-3" />
-              <span>{cat.label}</span>
+              <span>{t(cat.labelKey)}</span>
             </button>
           );
         })}
@@ -119,7 +121,7 @@ export const GanttToolbar: React.FC = () => {
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search PCBA op or WO#..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-slate-900/90 border border-slate-700/80 rounded pl-8 pr-2.5 py-1 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-500 w-44"
@@ -134,7 +136,7 @@ export const GanttToolbar: React.FC = () => {
             onChange={(e) => setWorkOrderFilter(e.target.value || null)}
             className="bg-transparent text-slate-300 text-xs focus:outline-none cursor-pointer max-w-[120px]"
           >
-            <option value="" className="bg-slate-900">All Batches</option>
+            <option value="" className="bg-slate-900">{t('allBatches')}</option>
             {workOrderList.map((wo) => (
               <option key={wo.id} value={wo.id} className="bg-slate-900">
                 {wo.orderNumber} ({wo.productCode})
@@ -149,11 +151,11 @@ export const GanttToolbar: React.FC = () => {
           onChange={(e) => setStatusFilter(e.target.value || null)}
           className="bg-slate-900/90 border border-slate-700/80 rounded px-2 py-1 text-slate-300 text-xs focus:outline-none cursor-pointer"
         >
-          <option value="" className="bg-slate-900">All Statuses</option>
-          <option value="Planned" className="bg-slate-900">Planned</option>
-          <option value="InProgress" className="bg-slate-900">In Progress</option>
-          <option value="Completed" className="bg-slate-900">Completed</option>
-          <option value="Delayed" className="bg-slate-900">Delayed</option>
+          <option value="" className="bg-slate-900">{t('allStatuses')}</option>
+          <option value="Planned" className="bg-slate-900">{t('statusPlanned')}</option>
+          <option value="InProgress" className="bg-slate-900">{t('statusInProgress')}</option>
+          <option value="Completed" className="bg-slate-900">{t('statusCompleted')}</option>
+          <option value="Delayed" className="bg-slate-900">{t('statusDelayed')}</option>
         </select>
 
         {/* Undo / Redo */}
@@ -164,7 +166,7 @@ export const GanttToolbar: React.FC = () => {
             className={`p-1.5 rounded border border-slate-700 ${
               undoStack.length > 0 ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'text-slate-600 cursor-not-allowed'
             }`}
-            title="Undo Move (Ctrl+Z)"
+            title={t('undo')}
           >
             <Undo className="w-3.5 h-3.5" />
           </button>
@@ -174,7 +176,7 @@ export const GanttToolbar: React.FC = () => {
             className={`p-1.5 rounded border border-slate-700 ${
               redoStack.length > 0 ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'text-slate-600 cursor-not-allowed'
             }`}
-            title="Redo Move (Ctrl+Y)"
+            title={t('redo')}
           >
             <Redo className="w-3.5 h-3.5" />
           </button>
@@ -188,7 +190,7 @@ export const GanttToolbar: React.FC = () => {
               zoomLevel === 'hour' ? 'bg-cyan-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
-            1H
+            {t('hourView')}
           </button>
           <button
             onClick={() => setZoomLevel('day')}
@@ -196,7 +198,7 @@ export const GanttToolbar: React.FC = () => {
               zoomLevel === 'day' ? 'bg-cyan-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
-            1D
+            {t('dayView')}
           </button>
           <button
             onClick={() => setZoomLevel('week')}
@@ -204,7 +206,7 @@ export const GanttToolbar: React.FC = () => {
               zoomLevel === 'week' ? 'bg-cyan-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
-            Shift/W
+            {t('weekView')}
           </button>
         </div>
 
@@ -212,7 +214,7 @@ export const GanttToolbar: React.FC = () => {
         <button
           onClick={() => fetchSchedule()}
           className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
-          title="Reload Schedule Data"
+          title={t('reload')}
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>

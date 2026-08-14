@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { scheduleApi } from '../../services/api';
 import { Layers, Trash2, Save, X } from 'lucide-react';
 
 export const OperationDetailDrawer: React.FC = () => {
+  const { t } = useTranslation();
   const selectedOperationId = useScheduleStore((s) => s.selectedOperationId);
   const setSelectedOperationId = useScheduleStore((s) => s.setSelectedOperationId);
   const operations = useScheduleStore((s) => s.operations);
@@ -108,7 +110,7 @@ export const OperationDetailDrawer: React.FC = () => {
       {/* Form Body */}
       <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-4 space-y-4">
         <div>
-          <label className="block text-slate-400 font-semibold mb-1">PCBA Routing Step Name</label>
+          <label className="block text-slate-400 font-semibold mb-1">{t('opName')}</label>
           <input
             type="text"
             required
@@ -119,7 +121,7 @@ export const OperationDetailDrawer: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-slate-400 font-semibold mb-1">Assigned Work Center</label>
+          <label className="block text-slate-400 font-semibold mb-1">{t('assignedCenter')}</label>
           <select
             value={resourceId}
             onChange={(e) => setResourceId(e.target.value)}
@@ -134,7 +136,7 @@ export const OperationDetailDrawer: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-slate-400 font-semibold mb-1">Product Family / PCB Model</label>
+          <label className="block text-slate-400 font-semibold mb-1">{t('productFamily')}</label>
           <select
             value={productType}
             onChange={(e) => setProductType(e.target.value)}
@@ -150,7 +152,7 @@ export const OperationDetailDrawer: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Process Run Time</label>
+            <label className="block text-slate-400 font-semibold mb-1">{t('runDuration')}</label>
             <div className="flex items-center gap-1">
               <input
                 type="number"
@@ -165,7 +167,7 @@ export const OperationDetailDrawer: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Feeder / Stencil Setup</label>
+            <label className="block text-slate-400 font-semibold mb-1">{t('setupDuration')}</label>
             <div className="flex items-center gap-1">
               <input
                 type="number"
@@ -182,22 +184,22 @@ export const OperationDetailDrawer: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Status</label>
+            <label className="block text-slate-400 font-semibold mb-1">{t('statusLabel')}</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
             >
-              <option value="Planned">Planned</option>
-              <option value="InProgress">In Progress</option>
-              <option value="Completed">Completed</option>
-              <option value="Delayed">Delayed</option>
-              <option value="Blocked">Blocked</option>
+              <option value="Planned">{t('statusPlanned')}</option>
+              <option value="InProgress">{t('statusInProgress')}</option>
+              <option value="Completed">{t('statusCompleted')}</option>
+              <option value="Delayed">{t('statusDelayed')}</option>
+              <option value="Blocked">{t('statusBlocked')}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Stage Color</label>
+            <label className="block text-slate-400 font-semibold mb-1">{t('stageColor')}</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -220,7 +222,7 @@ export const OperationDetailDrawer: React.FC = () => {
             className="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-cyan-500"
           />
           <label htmlFor="isLockedCheck" className="text-slate-300 font-medium cursor-pointer">
-            🔒 Lock in Sequence (Prevent Ripple Shift)
+            🔒 {t('lockInSequence')}
           </label>
         </div>
 
@@ -228,10 +230,10 @@ export const OperationDetailDrawer: React.FC = () => {
         <div className="border-t border-slate-800 pt-3">
           <label className="block text-slate-400 font-semibold mb-2 flex items-center gap-1">
             <Layers className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Preceding Operations (DAG Precedence Links)</span>
+            <span>{t('dagPrecedences')}</span>
           </label>
           {otherOperationsInWo.length === 0 ? (
-            <div className="text-slate-500 italic">No other operations in this work order.</div>
+            <div className="text-slate-500 italic">{t('noOtherOps')}</div>
           ) : (
             <div className="space-y-1.5 max-h-36 overflow-y-auto bg-slate-950 p-2 rounded border border-slate-800">
               {otherOperationsInWo.map((otherOp) => (
@@ -260,20 +262,20 @@ export const OperationDetailDrawer: React.FC = () => {
             className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold py-2 rounded shadow-lg shadow-cyan-950 transition-colors flex items-center justify-center gap-1.5"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>{isSaving ? 'Saving...' : 'Save & Recalculate DAG'}</span>
+            <span>{isSaving ? t('saving') : t('saveDag')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => {
-              if (confirm(`Are you sure you want to delete '${operation.name}'?`)) {
+              if (confirm(`'${operation.name}' ${t('deleteOpConfirm')}?`)) {
                 deleteOperation(operation.id);
               }
             }}
             className="w-full bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/50 font-semibold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Delete Operation</span>
+            <span>{t('deleteOp')}</span>
           </button>
         </div>
       </form>

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { scheduleApi } from '../../services/api';
 import { AlertTriangle, Wrench, X } from 'lucide-react';
 
 export const AddDowntimeModal: React.FC = () => {
+  const { t } = useTranslation();
   const isOpen = useScheduleStore((s) => s.isAddDowntimeOpen);
   const setIsOpen = useScheduleStore((s) => s.setIsAddDowntimeOpen);
   const resources = useScheduleStore((s) => s.resources);
@@ -66,9 +68,9 @@ export const AddDowntimeModal: React.FC = () => {
               <AlertTriangle className="w-4 h-4 text-amber-400" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-amber-300">Schedule EMS Line Maintenance</h2>
+              <h2 className="text-sm font-bold text-amber-300">{t('maintenanceTitle')}</h2>
               <p className="text-xs text-slate-400">
-                Reserve an SMT/THT maintenance block. Overlapping jobs automatically shift forward.
+                {t('maintenanceDesc')}
               </p>
             </div>
           </div>
@@ -84,7 +86,7 @@ export const AddDowntimeModal: React.FC = () => {
         <div className="px-6 pt-4">
           <label className="block text-slate-400 font-semibold mb-1.5 flex items-center gap-1">
             <Wrench className="w-3 h-3 text-amber-400" />
-            <span>EMS Maintenance Quick Presets:</span>
+            <span>{t('maintenancePresets')}</span>
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -99,8 +101,8 @@ export const AddDowntimeModal: React.FC = () => {
               }
               className="bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-amber-500 rounded p-2 text-left"
             >
-              <div className="font-semibold text-amber-300 text-[11px]">SMT Stencil Auto-Wipe</div>
-              <div className="text-[10px] text-slate-400">SMT-LINE-01 (15m in 2h)</div>
+              <div className="font-semibold text-amber-300 text-[11px]">{t('tmplSqueegeeWipe')}</div>
+              <div className="text-[10px] text-slate-400">{t('tmplSqueegeeWipeDesc')}</div>
             </button>
             <button
               type="button"
@@ -114,8 +116,8 @@ export const AddDowntimeModal: React.FC = () => {
               }
               className="bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-amber-500 rounded p-2 text-left"
             >
-              <div className="font-semibold text-amber-300 text-[11px]">Wave Dross Skimming</div>
-              <div className="text-[10px] text-slate-400">THT-WAVE-01 (25m in 3h)</div>
+              <div className="font-semibold text-amber-300 text-[11px]">{t('tmplWaveDross')}</div>
+              <div className="text-[10px] text-slate-400">{t('tmplWaveDrossDesc')}</div>
             </button>
           </div>
         </div>
@@ -123,7 +125,7 @@ export const AddDowntimeModal: React.FC = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Target EMS Work Center</label>
+            <label className="block text-slate-300 font-semibold mb-1">{t('targetCenter')}</label>
             <select
               value={resourceId}
               onChange={(e) => setResourceId(e.target.value)}
@@ -138,7 +140,7 @@ export const AddDowntimeModal: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Maintenance Reason</label>
+            <label className="block text-slate-300 font-semibold mb-1">{t('maintenanceReason')}</label>
             <input
               type="text"
               required
@@ -151,7 +153,7 @@ export const AddDowntimeModal: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Starts In (Hours from Now)</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('startsInHours')}</label>
               <input
                 type="number"
                 min={0}
@@ -163,7 +165,7 @@ export const AddDowntimeModal: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Duration (Minutes)</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('durationMinutes')}</label>
               <input
                 type="number"
                 min={5}
@@ -185,7 +187,7 @@ export const AddDowntimeModal: React.FC = () => {
               className="rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-amber-500"
             />
             <label htmlFor="isPlanned" className="text-slate-300 font-medium cursor-pointer">
-              Planned Preventive Maintenance (Checked) vs Line Breakdown (Unchecked)
+              {t('isPlannedMaintenance')}
             </label>
           </div>
 
@@ -195,7 +197,7 @@ export const AddDowntimeModal: React.FC = () => {
               onClick={() => setIsOpen(false)}
               className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-md font-semibold text-xs"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -203,7 +205,7 @@ export const AddDowntimeModal: React.FC = () => {
               className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-bold px-5 py-2 rounded-md text-xs transition-colors shadow-lg shadow-amber-950 flex items-center gap-1.5"
             >
               <AlertTriangle className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Scheduling...' : 'Reserve Maintenance Window'}</span>
+              <span>{isSubmitting ? t('scheduling') : t('reserveWindow')}</span>
             </button>
           </div>
         </form>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { scheduleApi } from '../../services/api';
-import { Cpu, Sparkles, Plus, Trash2, ShieldCheck } from 'lucide-react';
+import { Cpu, Sparkles, Plus, Trash2, ShieldCheck, X } from 'lucide-react';
 
 interface OperationInput {
   name: string;
@@ -13,6 +14,7 @@ interface OperationInput {
 }
 
 export const CreateWorkOrderModal: React.FC = () => {
+  const { t } = useTranslation();
   const isOpen = useScheduleStore((s) => s.isCreateWorkOrderOpen);
   const setIsOpen = useScheduleStore((s) => s.setIsCreateWorkOrderOpen);
   const resources = useScheduleStore((s) => s.resources);
@@ -233,9 +235,9 @@ export const CreateWorkOrderModal: React.FC = () => {
               <Cpu className="w-4 h-4 text-cyan-400" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-100">Create PCBA Work Order & Routing</h2>
+              <h2 className="text-sm font-bold text-slate-100">{t('createModalTitle')}</h2>
               <p className="text-xs text-slate-400">
-                EMS Job configuration, SMT/THT sequence DAG, and quality specifications.
+                {t('createModalDesc')}
               </p>
             </div>
           </div>
@@ -243,7 +245,7 @@ export const CreateWorkOrderModal: React.FC = () => {
             onClick={() => setIsOpen(false)}
             className="text-slate-400 hover:text-slate-200 text-lg p-1"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -253,7 +255,7 @@ export const CreateWorkOrderModal: React.FC = () => {
           <div>
             <label className="block text-slate-300 font-semibold mb-1.5 flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Quick EMS Routing Templates:</span>
+              <span>{t('quickTemplates')}</span>
             </label>
             <div className="grid grid-cols-4 gap-2">
               <button
@@ -262,9 +264,9 @@ export const CreateWorkOrderModal: React.FC = () => {
                 className="bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-md p-2 text-left transition-all group"
               >
                 <div className="text-[11px] font-bold text-cyan-300 group-hover:text-cyan-200">
-                  Dual-Sided SMT + THT + FCT
+                  {t('tmplDoubleSmt')}
                 </div>
-                <div className="text-[10px] text-slate-400">8 Steps (Automotive/Industrial)</div>
+                <div className="text-[10px] text-slate-400">{t('tmplDoubleSmtDesc')}</div>
               </button>
               <button
                 type="button"
@@ -272,9 +274,9 @@ export const CreateWorkOrderModal: React.FC = () => {
                 className="bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-md p-2 text-left transition-all group"
               >
                 <div className="text-[11px] font-bold text-amber-300 group-hover:text-amber-200">
-                  Single SMT + Wave Solder
+                  {t('tmplSingleSmt')}
                 </div>
-                <div className="text-[10px] text-slate-400">4 Steps (Smart IoT / Telecom)</div>
+                <div className="text-[10px] text-slate-400">{t('tmplSingleSmtDesc')}</div>
               </button>
               <button
                 type="button"
@@ -282,9 +284,9 @@ export const CreateWorkOrderModal: React.FC = () => {
                 className="bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-md p-2 text-left transition-all group"
               >
                 <div className="text-[11px] font-bold text-purple-300 group-hover:text-purple-200">
-                  Fast Prototype (NPI Run)
+                  {t('tmplNpiFast')}
                 </div>
-                <div className="text-[10px] text-slate-400">4 Steps (Flying Probe ICT)</div>
+                <div className="text-[10px] text-slate-400">{t('tmplNpiFastDesc')}</div>
               </button>
               <button
                 type="button"
@@ -292,9 +294,9 @@ export const CreateWorkOrderModal: React.FC = () => {
                 className="bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-md p-2 text-left transition-all group"
               >
                 <div className="text-[11px] font-bold text-emerald-300 group-hover:text-emerald-200">
-                  Medical ISO 13485 (Class III)
+                  {t('tmplMedical')}
                 </div>
-                <div className="text-[10px] text-slate-400">5 Steps (3D X-Ray + Coating)</div>
+                <div className="text-[10px] text-slate-400">{t('tmplMedicalDesc')}</div>
               </button>
             </div>
           </div>
@@ -303,7 +305,7 @@ export const CreateWorkOrderModal: React.FC = () => {
           <div className="grid grid-cols-3 gap-4 border-t border-slate-800 pt-3">
             <div>
               <label className="block text-slate-300 font-semibold mb-1">
-                PCBA Work Order # *
+                {t('woNumber')}
               </label>
               <input
                 type="text"
@@ -315,7 +317,7 @@ export const CreateWorkOrderModal: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">OEM Customer</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('customer')}</label>
               <input
                 type="text"
                 placeholder="e.g. Continental Automotive"
@@ -325,7 +327,7 @@ export const CreateWorkOrderModal: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Quality Standard</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('qualityStd')}</label>
               <select
                 value={industryStandard}
                 onChange={(e) => setIndustryStandard(e.target.value)}
@@ -342,7 +344,7 @@ export const CreateWorkOrderModal: React.FC = () => {
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">PCB Assembly Code *</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('productCode')}</label>
               <input
                 type="text"
                 required
@@ -353,7 +355,7 @@ export const CreateWorkOrderModal: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Assembly Description *</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('productDesc')}</label>
               <input
                 type="text"
                 required
@@ -364,7 +366,7 @@ export const CreateWorkOrderModal: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Solder Alloy Specification</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('solderAlloy')}</label>
               <select
                 value={solderAlloy}
                 onChange={(e) => setSolderAlloy(e.target.value)}
@@ -380,7 +382,7 @@ export const CreateWorkOrderModal: React.FC = () => {
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Panel Array Quantity</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('quantity')}</label>
               <input
                 type="number"
                 min={1}
@@ -390,28 +392,28 @@ export const CreateWorkOrderModal: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Priority Class</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('priority')}</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(Number(e.target.value))}
                 className="w-full bg-slate-950 border border-slate-700 rounded-md px-3 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
               >
-                <option value={1}>1 — Critical Expedited</option>
-                <option value={2}>2 — Standard Production</option>
-                <option value={3}>3 — Buffer Production</option>
+                <option value={1}>{t('prioCritical')}</option>
+                <option value={2}>{t('prioNormal')}</option>
+                <option value={3}>{t('prioLow')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Target Lead Time</label>
+              <label className="block text-slate-300 font-semibold mb-1">{t('targetLeadTime')}</label>
               <select
                 value={dueDateDays}
                 onChange={(e) => setDueDateDays(Number(e.target.value))}
                 className="w-full bg-slate-950 border border-slate-700 rounded-md px-3 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
               >
-                <option value={1}>1 Day (Rush)</option>
-                <option value={2}>2 Days (Normal)</option>
-                <option value={3}>3 Days</option>
-                <option value={5}>5 Days (Batch)</option>
+                <option value={1}>{t('day1')}</option>
+                <option value={2}>{t('day2')}</option>
+                <option value={3}>{t('day3')}</option>
+                <option value={5}>{t('day5')}</option>
               </select>
             </div>
           </div>
@@ -421,7 +423,7 @@ export const CreateWorkOrderModal: React.FC = () => {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                <span>PCBA Routing Operations Sequence ({operations.length} Steps)</span>
+                <span>{t('routingSteps')} ({operations.length})</span>
               </h3>
               <button
                 type="button"
@@ -429,7 +431,7 @@ export const CreateWorkOrderModal: React.FC = () => {
                 className="bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 rounded px-2.5 py-1 font-semibold flex items-center gap-1 text-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Routing Step</span>
+                <span>{t('addStep')}</span>
               </button>
             </div>
 
@@ -476,7 +478,7 @@ export const CreateWorkOrderModal: React.FC = () => {
                         }
                         className="w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:border-cyan-500 font-mono text-center"
                       />
-                      <span className="text-slate-400 text-[10px]">min run</span>
+                      <span className="text-slate-400 text-[10px]">min</span>
                     </div>
 
                     <select
@@ -513,7 +515,7 @@ export const CreateWorkOrderModal: React.FC = () => {
               onClick={() => setIsOpen(false)}
               className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-md font-semibold text-xs"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -521,7 +523,7 @@ export const CreateWorkOrderModal: React.FC = () => {
               className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white px-5 py-2 rounded-md font-semibold text-xs transition-colors shadow-lg shadow-cyan-950 flex items-center gap-1.5"
             >
               <Cpu className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Scheduling PCBA Batch...' : 'Create & Schedule PCBA Work Order'}</span>
+              <span>{isSubmitting ? t('creatingWo') : t('submitWo')}</span>
             </button>
           </div>
         </form>

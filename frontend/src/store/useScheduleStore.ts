@@ -11,6 +11,7 @@ import {
   ScheduleDelta,
 } from '../types/schedule';
 import { scheduleApi } from '../services/api';
+import { Language } from '../i18n/translations';
 
 interface ScheduleHistoryState {
   operations: Record<string, Operation>;
@@ -44,6 +45,7 @@ interface ScheduleStore {
   machineFilter: string | null;
   statusFilter: string | null;
   workCenterCategory: 'ALL' | 'SMT' | 'THT' | 'TEST' | 'COAT';
+  language: Language;
 
   // Modals & Context Menu
   contextMenu: { x: number; y: number; operationId: string } | null;
@@ -69,6 +71,7 @@ interface ScheduleStore {
   setMachineFilter: (id: string | null) => void;
   setStatusFilter: (status: string | null) => void;
   setWorkCenterCategory: (category: 'ALL' | 'SMT' | 'THT' | 'TEST' | 'COAT') => void;
+  setLanguage: (lang: Language) => void;
 
   setContextMenu: (menu: { x: number; y: number; operationId: string } | null) => void;
   setIsCreateWorkOrderOpen: (open: boolean) => void;
@@ -149,6 +152,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   machineFilter: null,
   statusFilter: null,
   workCenterCategory: 'ALL',
+  language: (typeof window !== 'undefined' && (localStorage.getItem('aps_lang') as Language)) || 'tr',
 
   contextMenu: null,
   isCreateWorkOrderOpen: false,
@@ -214,6 +218,12 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   setMachineFilter: (id) => set({ machineFilter: id }),
   setStatusFilter: (status) => set({ statusFilter: status }),
   setWorkCenterCategory: (category) => set({ workCenterCategory: category }),
+  setLanguage: (lang) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('aps_lang', lang);
+    }
+    set({ language: lang });
+  },
 
   setContextMenu: (menu) => set({ contextMenu: menu }),
   setIsCreateWorkOrderOpen: (open) => set({ isCreateWorkOrderOpen: open }),

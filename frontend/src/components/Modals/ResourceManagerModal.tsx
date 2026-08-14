@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { scheduleApi } from '../../services/api';
 import { Cpu, RefreshCw, Trash2, Plus, X } from 'lucide-react';
 
 export const ResourceManagerModal: React.FC = () => {
+  const { t } = useTranslation();
   const isOpen = useScheduleStore((s) => s.isResourceManagerOpen);
   const setIsOpen = useScheduleStore((s) => s.setIsResourceManagerOpen);
   const resources = useScheduleStore((s) => s.resources);
@@ -78,9 +80,9 @@ export const ResourceManagerModal: React.FC = () => {
               <Cpu className="w-4 h-4 text-cyan-400" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-100">EMS Production Lines & Changeover Matrices</h2>
+              <h2 className="text-sm font-bold text-slate-100">{t('resourceModalTitle')}</h2>
               <p className="text-xs text-slate-400">
-                Configure SMT/THT lines, test stations, and feeder/solder alloy setup penalties.
+                {t('resourceModalDesc')}
               </p>
             </div>
           </div>
@@ -103,7 +105,7 @@ export const ResourceManagerModal: React.FC = () => {
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>EMS Work Centers ({Object.keys(resources).length})</span>
+            <span>{t('tabCenters')} ({Object.keys(resources).length})</span>
           </button>
           <button
             onClick={() => setActiveTab('matrix')}
@@ -114,7 +116,7 @@ export const ResourceManagerModal: React.FC = () => {
             }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Changeover Setup Matrix ({setupMatrices.length})</span>
+            <span>{t('tabMatrix')} ({setupMatrices.length})</span>
           </button>
         </div>
 
@@ -129,11 +131,11 @@ export const ResourceManagerModal: React.FC = () => {
               >
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
                   <Plus className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Add New EMS Line / Station</span>
+                  <span>{t('addNewCenter')}</span>
                 </h3>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">Line / Station Name</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('centerName')}</label>
                     <input
                       type="text"
                       required
@@ -144,7 +146,7 @@ export const ResourceManagerModal: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">Machine Code (ID)</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('centerCode')}</label>
                     <input
                       type="text"
                       required
@@ -155,7 +157,7 @@ export const ResourceManagerModal: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">EMS Equipment Class</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('equipmentClass')}</label>
                     <select
                       value={type}
                       onChange={(e) => setType(e.target.value)}
@@ -175,7 +177,7 @@ export const ResourceManagerModal: React.FC = () => {
 
                 <div className="grid grid-cols-4 gap-3 items-end">
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">Daily Operating Hours</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('operatingHours')}</label>
                     <input
                       type="number"
                       min={8}
@@ -186,7 +188,7 @@ export const ResourceManagerModal: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">Hourly Rate ($/hr)</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('hourlyRate')}</label>
                     <input
                       type="number"
                       min={10}
@@ -196,7 +198,7 @@ export const ResourceManagerModal: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">Accent Color</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('accentColor')}</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -212,7 +214,7 @@ export const ResourceManagerModal: React.FC = () => {
                     disabled={isSubmitting}
                     className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1.5 px-3 rounded text-xs transition-colors shadow-sm"
                   >
-                    + Add EMS Center
+                    {t('addCenterBtn')}
                   </button>
                 </div>
               </form>
@@ -222,13 +224,13 @@ export const ResourceManagerModal: React.FC = () => {
                 <table className="w-full text-left">
                   <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold text-[11px]">
                     <tr>
-                      <th className="p-2.5">Color</th>
-                      <th className="p-2.5">Line / Work Center Name</th>
-                      <th className="p-2.5">Code</th>
-                      <th className="p-2.5">Type</th>
-                      <th className="p-2.5">Hours/Day</th>
-                      <th className="p-2.5">Rate</th>
-                      <th className="p-2.5 text-right">Actions</th>
+                      <th className="p-2.5">{t('tableColor')}</th>
+                      <th className="p-2.5">{t('tableName')}</th>
+                      <th className="p-2.5">{t('tableCode')}</th>
+                      <th className="p-2.5">{t('tableType')}</th>
+                      <th className="p-2.5">{t('tableHours')}</th>
+                      <th className="p-2.5">{t('tableRate')}</th>
+                      <th className="p-2.5 text-right">{t('tableActions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 bg-slate-900/50">
@@ -248,7 +250,7 @@ export const ResourceManagerModal: React.FC = () => {
                         <td className="p-2.5 text-right">
                           <button
                             onClick={() => {
-                              if (confirm(`Delete EMS center '${r.name}'?`)) {
+                              if (confirm(`${r.name} ${t('deleteOpConfirm')}?`)) {
                                 deleteResource(r.id);
                               }
                             }}
@@ -272,11 +274,11 @@ export const ResourceManagerModal: React.FC = () => {
               >
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
                   <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Configure Feeder Cart / Solder Alloy Changeover Penalty</span>
+                  <span>{t('matrixTitle')}</span>
                 </h3>
                 <div className="grid grid-cols-4 gap-3 items-end">
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">From Product Family</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('fromFamily')}</label>
                     <select
                       value={fromType}
                       onChange={(e) => setFromType(e.target.value)}
@@ -294,7 +296,7 @@ export const ResourceManagerModal: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">To Product Family</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('toFamily')}</label>
                     <select
                       value={toType}
                       onChange={(e) => setToType(e.target.value)}
@@ -312,7 +314,7 @@ export const ResourceManagerModal: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1 font-medium">Setup Penalty (Minutes)</label>
+                    <label className="block text-slate-400 mb-1 font-medium">{t('setupPenalty')}</label>
                     <input
                       type="number"
                       min={0}
@@ -326,7 +328,7 @@ export const ResourceManagerModal: React.FC = () => {
                     type="submit"
                     className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1.5 px-3 rounded text-xs transition-colors shadow-sm"
                   >
-                    💾 Save Changeover Rule
+                    {t('saveRule')}
                   </button>
                 </div>
               </form>
@@ -336,9 +338,9 @@ export const ResourceManagerModal: React.FC = () => {
                 <table className="w-full text-left">
                   <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold text-[11px]">
                     <tr>
-                      <th className="p-2.5">From Family / Alloy</th>
-                      <th className="p-2.5">To Family / Alloy</th>
-                      <th className="p-2.5">Feeder / Stencil Setup Penalty</th>
+                      <th className="p-2.5">{t('fromFamily')}</th>
+                      <th className="p-2.5">{t('toFamily')}</th>
+                      <th className="p-2.5">{t('setupPenalty')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 bg-slate-900/50">

@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export const GanttContextMenu: React.FC = () => {
+  const { t } = useTranslation();
   const contextMenu = useScheduleStore((s) => s.contextMenu);
   const setContextMenu = useScheduleStore((s) => s.setContextMenu);
   const setSelectedOperationId = useScheduleStore((s) => s.setSelectedOperationId);
@@ -29,7 +31,7 @@ export const GanttContextMenu: React.FC = () => {
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-[200px] rounded-lg border border-slate-700/80 bg-slate-900/95 py-1.5 shadow-2xl backdrop-blur-md text-xs font-medium text-slate-200 animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-50 min-w-[200px] rounded-lg border border-slate-700/80 bg-slate-900/95 py-1.5 shadow-2xl backdrop-blur-md text-xs font-medium text-slate-200 animate-in fade-in zoom-in-95 duration-100 select-none"
       style={{
         left: `${Math.min(window.innerWidth - 220, contextMenu.x)}px`,
         top: `${Math.min(window.innerHeight - 200, contextMenu.y)}px`,
@@ -44,10 +46,10 @@ export const GanttContextMenu: React.FC = () => {
           setSelectedOperationId(contextMenu.operationId);
           setContextMenu(null);
         }}
-        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-sky-500/20 hover:text-sky-300 transition-colors"
+        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-cyan-500/20 hover:text-cyan-300 transition-colors"
       >
         <span className="text-sm">📝</span>
-        <span>Edit Operation Details</span>
+        <span>{t('contextEdit')}</span>
       </button>
 
       <button
@@ -58,14 +60,14 @@ export const GanttContextMenu: React.FC = () => {
         className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-amber-500/20 hover:text-amber-300 transition-colors"
       >
         <span className="text-sm">✂️</span>
-        <span>Split Operation (Sub-lot)</span>
+        <span>{t('contextSplit')}</span>
       </button>
 
       <div className="my-1 border-t border-slate-800" />
 
       <button
         onClick={() => {
-          if (confirm(`Are you sure you want to delete '${currentOp.name}'?`)) {
+          if (confirm(`'${currentOp.name}' ${t('deleteOpConfirm')}?`)) {
             deleteOperation(contextMenu.operationId);
           }
           setContextMenu(null);
@@ -73,7 +75,7 @@ export const GanttContextMenu: React.FC = () => {
         className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
       >
         <span className="text-sm">🗑️</span>
-        <span>Delete Operation</span>
+        <span>{t('contextDelete')}</span>
       </button>
     </div>
   );
