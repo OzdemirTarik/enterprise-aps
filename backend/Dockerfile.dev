@@ -1,0 +1,29 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dev
+WORKDIR /app
+
+ENV DOTNET_SYSTEM_NET_DISABLEIPV6=1
+ENV DOTNET_NUGET_SIGNATURE_VERIFICATION=false
+
+# Install custom CA certificates for corporate SSL inspection proxy
+COPY certs/ /usr/local/share/ca-certificates/
+RUN update-ca-certificates || true
+
+# Copy project files and restore dependencies at build time
+COPY EnterpriseAps.Domain/EnterpriseAps.Domain.csproj EnterpriseAps.Domain/
+COPY EnterpriseAps.Application/EnterpriseAps.Application.csproj EnterpriseAps.Application/
+COPY EnterpriseAps.Infrastructure/EnterpriseAps.Infrastructure.csproj EnterpriseAps.Infrastructure/
+COPY EnterpriseAps.Api/EnterpriseAps.Api.csproj EnterpriseAps.Api/
+COPY EnterpriseAps.sln ./
+
+RUN dotnet restore EnterpriseAps.sln
+
+COPY . .
+
+# Expose HTTP port for Web API & SignalR WebSockets
+EXPOSE 5000
+
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_URLS=http://0.0.0.0:5000
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+
+ENTRYPOINT ["dotnet", "watch", "--project", "EnterpriseAps.Api/EnterpriseAps.Api.csproj", "run", "--urls", "http://0.0.0.0:5000"]

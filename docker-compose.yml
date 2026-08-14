@@ -1,0 +1,98 @@
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: aps_postgres
+    restart: unless-stopped
+    ports:
+      - "5439:5432"
+    environment:
+      POSTGRES_DB: aps_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aps_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aps_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: aps_redis
+    restart: unless-stopped
+    ports:
+      - "6389:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - aps_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      network: host
+    container_name: aps_backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5000
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=aps_db;Username=postgres;Password=postgres;Include Error Detail=true"
+      Redis__ConnectionString: "redis:6379"
+    volumes:
+      - ./backend:/app
+      - root_nuget_cache:/root/.nuget/packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aps_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: aps_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "24678:24678"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      VITE_API_URL: "http://backend:5000"
+      VITE_SIGNALR_URL: "http://backend:5000/hubs/scheduling"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - aps_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  root_nuget_cache:
+
+networks:
+  aps_network:
+    driver: bridge

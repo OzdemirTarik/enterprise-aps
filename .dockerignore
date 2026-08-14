@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+.vscode
+.idea
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+
+# .NET
+**/bin/
+**/obj/
+**/out/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node / Frontend
+**/node_modules/
+**/dist/
+**/build/
+.npm
+.yarn
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
