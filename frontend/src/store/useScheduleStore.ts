@@ -14,80 +14,18 @@ import {
 import { scheduleApi } from '../services/api';
 import { Language } from '../i18n/translations';
 
+import {
+  computeCriticalPath,
+  computeResourceHeatmap,
+  CriticalPathResult,
+  HeatmapBin,
+} from '../utils/analytics';
+
+export { computeCriticalPath, computeResourceHeatmap };
+export type { CriticalPathResult, HeatmapBin };
+
 export interface ScheduleHistoryState {
   operations: Record<string, Operation>;
-}
-
-export function computeCriticalPath(operations: Record<string, Operation>): Set<string> {
-  const ops = Object.values(operations);
-  if (ops.length === 0) return new Set();
-
-  const criticalSet = new Set<string>();
-
-  const byWo: Record<string, Operation[]> = {};
-  ops.forEach((op) => {
-    if (!byWo[op.workOrderId]) byWo[op.workOrderId] = [];
-    byWo[op.workOrderId].push(op);
-  });
-
-  Object.values(byWo).forEach((woOps) => {
-    if (woOps.length === 0) return;
-
-    let maxEndMs = -Infinity;
-    let terminalOp: Operation | null = null;
-
-    woOps.forEach((op) => {
-      const endMs = new Date(op.plannedEndTime).getTime();
-      if (endMs > maxEndMs) {
-        maxEndMs = endMs;
-        terminalOp = op;
-      }
-    });
-
-    if (!terminalOp) return;
-
-    const visited = new Set<string>();
-    const traceBack = (current: Operation) => {
-      criticalSet.add(current.id);
-      visited.add(current.id);
-
-      const precIds = current.precedenceOperationIds || [];
-      if (precIds.length === 0) {
-        const prevOps = woOps
-          .filter((o) => o.sequenceIndex < current.sequenceIndex && !visited.has(o.id))
-          .sort(
-            (a, b) =>
-              new Date(b.plannedEndTime).getTime() - new Date(a.plannedEndTime).getTime()
-          );
-        if (prevOps.length > 0) {
-          traceBack(prevOps[0]);
-        }
-        return;
-      }
-
-      let latestPred: Operation | null = null;
-      let latestPredEnd = -Infinity;
-
-      precIds.forEach((pid) => {
-        const pred = operations[pid];
-        if (pred && !visited.has(pred.id)) {
-          const endMs = new Date(pred.plannedEndTime).getTime();
-          if (endMs > latestPredEnd) {
-            latestPredEnd = endMs;
-            latestPred = pred;
-          }
-        }
-      });
-
-      if (latestPred) {
-        traceBack(latestPred);
-      }
-    };
-
-    traceBack(terminalOp);
-  });
-
-  return criticalSet;
 }
 
 interface ScheduleStore {

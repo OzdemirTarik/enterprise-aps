@@ -1,5 +1,5 @@
 import React from 'react';
-import { useScheduleStore } from '../../store/useScheduleStore';
+import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import {
   Plus,
@@ -67,6 +67,11 @@ export const GanttToolbar: React.FC = () => {
   const fetchSchedule = useScheduleStore((state) => state.fetchSchedule);
 
   const workOrderList = Object.values(workOrders);
+
+  const criticalResult = React.useMemo(() => {
+    if (!isCriticalPathActive) return null;
+    return computeCriticalPath(operations, workOrders);
+  }, [isCriticalPathActive, operations, workOrders]);
 
   const categories: Array<{ id: 'ALL' | 'SMT' | 'THT' | 'TEST' | 'COAT'; labelKey: any; icon: any }> = [
     { id: 'ALL', labelKey: 'allCenters', icon: Layers },
@@ -198,6 +203,34 @@ export const GanttToolbar: React.FC = () => {
           <Activity className="w-3.5 h-3.5" />
           <span>{t('capacityHeatmap')}</span>
         </button>
+
+        {/* Dynamic Critical Path Status Pill */}
+        {isCriticalPathActive && (
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-rose-950/90 border border-rose-500/80 text-rose-200 text-[10px] font-mono shadow-sm">
+            <Flame className="w-3 h-3 text-amber-300 fill-amber-400 animate-pulse shrink-0" />
+            <span>
+              {t('criticalPath')}: <strong className="text-white">{criticalResult?.bottleneckWorkOrderNumber || 'Yok'}</strong> ({criticalResult?.totalCriticalOperations} Adım)
+            </span>
+          </div>
+        )}
+
+        {/* Dynamic Heatmap Legend */}
+        {isHeatmapActive && (
+          <div className="flex items-center gap-2 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-[10px] font-mono">
+            <span className="flex items-center gap-1 text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              &lt;50%
+            </span>
+            <span className="flex items-center gap-1 text-amber-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              50-85%
+            </span>
+            <span className="flex items-center gap-1 text-rose-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+              &gt;85%
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Right Group: Search, Filters, Undo/Redo & Zoom */}

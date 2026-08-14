@@ -14,6 +14,7 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
 }) => {
   const resources = useScheduleStore((state) => state.resources);
   const operations = useScheduleStore((state) => state.operations);
+  const workOrders = useScheduleStore((state) => state.workOrders);
   const timelineStart = useScheduleStore((state) => state.timelineStart);
   const timelineEnd = useScheduleStore((state) => state.timelineEnd);
   const selectedOperationId = useScheduleStore((state) => state.selectedOperationId);
@@ -31,10 +32,10 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
   });
   const opList = Object.values(operations);
 
-  const criticalSet = React.useMemo(() => {
-    if (!isCriticalPathActive) return new Set<string>();
-    return computeCriticalPath(operations);
-  }, [isCriticalPathActive, operations]);
+  const criticalResult = React.useMemo(() => {
+    if (!isCriticalPathActive) return null;
+    return computeCriticalPath(operations, workOrders);
+  }, [isCriticalPathActive, operations, workOrders]);
 
   const resourceIndexMap = React.useMemo(() => {
     const map = new Map<string, number>();
@@ -87,14 +88,15 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
           hoveredOperationId === parentOp.id;
 
         const isViolated = childStartMs < parentEndMs;
-        const isCritical = isCriticalPathActive && criticalSet.has(childOp.id) && criticalSet.has(parentOp.id);
+        const linkKey = `${parentOp.id}->${childOp.id}`;
+        const isCritical = isCriticalPathActive && !!criticalResult?.criticalLinks.has(linkKey);
 
         // Smooth S-curve Bézier
         const dx = Math.max(30, Math.abs(childX - parentX) * 0.5);
         const d = `M ${parentX} ${parentY} C ${parentX + dx} ${parentY}, ${childX - dx} ${childY}, ${childX} ${childY}`;
 
         result.push({
-          id: `${parentOp.id}->${childOp.id}`,
+          id: linkKey,
           d,
           isHighlighted,
           isViolated,
@@ -114,7 +116,7 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
     selectedOperationId,
     hoveredOperationId,
     isCriticalPathActive,
-    criticalSet,
+    criticalResult,
   ]);
 
   const totalMinutes = (timelineEnd.getTime() - timelineStart.getTime()) / 60000;
@@ -172,8 +174,8 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
           viewBox="0 0 10 10"
           refX="6"
           refY="5"
-          markerWidth="8"
-          markerHeight="8"
+          markerWidth="9"
+          markerHeight="9"
           orient="auto-start-reverse"
         >
           <path d="M 0 1 L 9 5 L 0 9 z" fill="#f43f5e" />
@@ -191,7 +193,7 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
             stroke={link.isViolated ? '#f43f5e' : '#475569'}
             strokeWidth={link.isViolated ? 2 : 1.2}
             strokeDasharray={link.isViolated ? '4 2' : 'none'}
-            opacity={0.7}
+            opacity={isCriticalPathActive ? 0.15 : 0.65}
             markerEnd={link.isViolated ? 'url(#arrow-violated)' : 'url(#arrow-default)'}
           />
         ))}
@@ -205,11 +207,11 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
             d={link.d}
             fill="none"
             stroke="#f43f5e"
-            strokeWidth={2.6}
-            strokeDasharray="5 3"
+            strokeWidth={3.5}
+            strokeDasharray="6 3"
             opacity={1}
             markerEnd="url(#arrow-critical)"
-            className="drop-shadow-[0_0_8px_rgba(244,63,94,0.9)] animate-pulse"
+            className="drop-shadow-[0_0_10px_rgba(244,63,94,1)] animate-pulse"
           />
         ))}
 
@@ -222,10 +224,10 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
             d={link.d}
             fill="none"
             stroke={link.isViolated ? '#f43f5e' : '#38bdf8'}
-            strokeWidth={2.8}
+            strokeWidth={3}
             opacity={1}
             markerEnd={link.isViolated ? 'url(#arrow-violated)' : 'url(#arrow-highlighted)'}
-            className="drop-shadow-[0_0_8px_rgba(56,189,248,0.8)]"
+            className="drop-shadow-[0_0_8px_rgba(56,189,248,0.9)]"
           />
         ))}
     </svg>

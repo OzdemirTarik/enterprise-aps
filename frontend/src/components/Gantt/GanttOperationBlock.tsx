@@ -32,6 +32,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   const isChainDragActive = useScheduleStore((s) => s.isChainDragActive);
   const isCriticalPathActive = useScheduleStore((s) => s.isCriticalPathActive);
   const operations = useScheduleStore((s) => s.operations);
+  const workOrders = useScheduleStore((s) => s.workOrders);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
@@ -56,11 +57,12 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   const isTargetFocused = scrollToOperationId === operation.id;
 
   // Critical Path calculation
-  const isCritical = useMemo(() => {
-    if (!isCriticalPathActive) return false;
-    const criticalSet = computeCriticalPath(operations);
-    return criticalSet.has(operation.id);
-  }, [isCriticalPathActive, operations, operation.id]);
+  const cpmResult = useMemo(() => {
+    if (!isCriticalPathActive) return null;
+    return computeCriticalPath(operations, workOrders);
+  }, [isCriticalPathActive, operations, workOrders]);
+
+  const isCritical = !!cpmResult?.criticalOperationIds.has(operation.id);
 
   // Tooltip live times
   const tooltipStartMs = startMs + dragOffsetMinutes * 60000;
@@ -77,12 +79,16 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     (!workOrderFilter || operation.workOrderId === workOrderFilter) &&
     (!statusFilter || operation.status === statusFilter);
 
-  const isDimmed = !matchesSearch || !matchesFilter;
+  const isDimmed =
+    !matchesSearch ||
+    !matchesFilter ||
+    (isCriticalPathActive && !isCritical);
+
   const isSearchHit = !!searchQuery && matchesSearch;
 
   // Move Dragging (Horizontal + Snap + Chain Drag)
   const handleMouseDownMove = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // Only left click
+    if (e.button !== 0) return;
     if (operation.isLocked) return;
 
     e.stopPropagation();
@@ -96,7 +102,6 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaPx = moveEvent.clientX - startClientX;
       const rawDeltaMin = deltaPx / minuteWidth;
-      // 15-minute magnetic snapping
       const snappedDeltaMin = Math.round(rawDeltaMin / 15) * 15;
       currentOffsetMin = snappedDeltaMin;
       setDragOffsetMinutes(snappedDeltaMin);
@@ -113,10 +118,8 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
 
       if (currentOffsetMin !== 0) {
         if (isGroupMode) {
-          // Chain / Group Drag all steps in this work order
           rescheduleWorkOrderChain(operation.workOrderId, currentOffsetMin);
         } else {
-          // Single operation reschedule
           const newStartMs = startMs + currentOffsetMin * 60000;
           rescheduleOptimistic(
             operation.id,
@@ -183,7 +186,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
 
   const getStatusBorder = () => {
     if (isTargetFocused) return 'border-cyan-400 ring-4 ring-cyan-400 shadow-2xl shadow-cyan-500/80 animate-pulse';
-    if (isCritical) return 'border-rose-500 ring-2 ring-rose-500 shadow-[0_0_16px_rgba(244,63,94,0.8)]';
+    if (isCritical) return 'border-rose-400 ring-2 ring-rose-500 shadow-[0_0_24px_rgba(244,63,94,0.95)] z-40';
     if (isSearchHit) return 'border-cyan-400 ring-2 ring-cyan-400/80 shadow-lg shadow-cyan-950';
     if (operation.status === 'Delayed') return 'border-rose-500 shadow-rose-950/40';
     if (operation.status === 'InProgress') return 'border-emerald-400 shadow-emerald-950/40';
@@ -204,11 +207,11 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
       }}
       onMouseEnter={() => setHoveredOperationId(operation.id)}
       onMouseLeave={() => setHoveredOperationId(null)}
-      className={`absolute top-1 bottom-1 rounded-md border text-xs cursor-move select-none transition-shadow group ${getStatusBorder()} ${
+      className={`absolute top-1 bottom-1 rounded-md border text-xs cursor-move select-none transition-all group ${getStatusBorder()} ${
         isSelected ? 'ring-2 ring-sky-400 ring-offset-1 ring-offset-slate-900 shadow-lg z-30' : 'z-20'
       } ${isHovered ? 'brightness-110 shadow-md' : ''} ${
-        isDragging || isResizingRight ? 'opacity-95 shadow-2xl scale-[1.01] z-40' : ''
-      } ${isDimmed ? 'opacity-25 grayscale-[60%]' : ''}`}
+        isDragging || isResizingRight ? 'opacity-95 shadow-2xl scale-[1.01] z-50' : ''
+      } ${isDimmed ? 'opacity-25 grayscale-[70%]' : ''}`}
       style={{
         left: `${leftPosition}px`,
         width: `${totalWidth}px`,
@@ -274,27 +277,29 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
 
         {/* Processing Duration Zone */}
         <div
-          className="h-full flex-1 flex items-center justify-between px-2 text-white font-medium overflow-hidden relative"
+          className={`h-full flex-1 flex items-center justify-between px-2 font-medium overflow-hidden relative ${
+            isCritical ? 'bg-gradient-to-r from-rose-950/90 via-red-950/80 to-rose-950/90 text-white font-bold' : 'text-white'
+          }`}
           style={{
-            backgroundColor: `${baseColor}22`,
+            backgroundColor: isCritical ? undefined : `${baseColor}22`,
             borderLeft: `3px solid ${baseColor}`,
           }}
         >
           <div className="flex items-center gap-1.5 min-w-0 truncate">
             {isCritical && (
-              <span title={t('criticalPathDesc')}>
-                <Flame className="w-3.5 h-3.5 text-rose-400 shrink-0 inline animate-pulse" />
+              <span title={t('criticalPathDesc')} className="flex items-center">
+                <Flame className="w-3.5 h-3.5 text-amber-300 fill-amber-400 shrink-0 inline animate-bounce" />
               </span>
             )}
             {operation.isLocked && <Lock className="w-3 h-3 text-amber-400 shrink-0 inline" />}
-            <span className={`font-mono text-[11px] font-bold shrink-0 ${isCritical ? 'text-rose-300' : 'text-sky-300'}`}>
+            <span className={`font-mono text-[11px] font-bold shrink-0 ${isCritical ? 'text-rose-200' : 'text-sky-300'}`}>
               {operation.workOrderNumber || operation.workOrderId}
             </span>
-            <span className="text-slate-200 text-[11px] truncate">{operation.name}</span>
+            <span className="text-slate-100 text-[11px] truncate">{operation.name}</span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 text-[10px] font-mono text-slate-400 pl-1">
-            <span className="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/50">
+            <span className={`px-1.5 py-0.5 rounded border ${isCritical ? 'bg-rose-900/80 text-rose-200 border-rose-600' : 'bg-slate-800/80 border-slate-700/50'}`}>
               {effectiveDuration}m
             </span>
           </div>
