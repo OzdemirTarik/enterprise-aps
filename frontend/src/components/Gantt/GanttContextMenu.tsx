@@ -35,6 +35,8 @@ export const GanttContextMenu: React.FC = () => {
   return (
     <div
       ref={menuRef}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       className="fixed z-50 min-w-[210px] rounded-lg border border-slate-700/80 bg-slate-900/95 py-1.5 shadow-2xl backdrop-blur-md text-xs font-medium text-slate-200 animate-in fade-in zoom-in-95 duration-100 select-none"
       style={{
         left: `${Math.min(window.innerWidth - 230, contextMenu.x)}px`,
@@ -46,7 +48,8 @@ export const GanttContextMenu: React.FC = () => {
       </div>
 
       <button
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           setSelectedOperationId(contextMenu.operationId);
           setContextMenu(null);
         }}
@@ -57,7 +60,8 @@ export const GanttContextMenu: React.FC = () => {
       </button>
 
       <button
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           setIsSplitModalOpen(true, contextMenu.operationId);
           setContextMenu(null);
         }}
@@ -70,7 +74,8 @@ export const GanttContextMenu: React.FC = () => {
       <div className="my-1 border-t border-slate-800" />
 
       <button
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           if (confirm(`'${currentOp.name}' ${t('deleteOpConfirm')}?`)) {
             deleteOperation(contextMenu.operationId);
           }
@@ -83,7 +88,8 @@ export const GanttContextMenu: React.FC = () => {
       </button>
 
       <button
-        onClick={async () => {
+        onClick={async (e) => {
+          e.stopPropagation();
           const wo = workOrders[currentOp.workOrderId];
           const woNumber = wo?.orderNumber || currentOp.workOrderId;
           const opCount = Object.values(operations).filter(
