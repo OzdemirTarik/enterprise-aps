@@ -32,7 +32,14 @@ export const GanttScheduler: React.FC = () => {
   const timelineEnd = validEnd;
 
   // Zoom scale: pixel width per minute
-  const minuteWidth = zoomLevel === 'hour' ? 3.0 : zoomLevel === 'day' ? 1.2 : 0.45;
+  const minuteWidth =
+    zoomLevel === 'hour'
+      ? 3.0
+      : zoomLevel === 'day'
+      ? 1.2
+      : zoomLevel === 'week'
+      ? 0.45
+      : 0.12; // 'month' view (1 day = ~173px)
 
   const totalMinutes = Math.max(1440, (timelineEnd.getTime() - timelineStart.getTime()) / 60000);
   const canvasWidth = Math.max(1200, totalMinutes * minuteWidth);

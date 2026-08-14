@@ -31,7 +31,7 @@ interface ScheduleStore {
   kpis: ScheduleKpis | null;
 
   // Viewport & Selection
-  zoomLevel: 'hour' | 'day' | 'week';
+  zoomLevel: 'hour' | 'day' | 'week' | 'month';
   timelineStart: Date;
   timelineEnd: Date;
   selectedOperationId: string | null;
@@ -69,7 +69,7 @@ interface ScheduleStore {
   setSelectedOperationId: (id: string | null) => void;
   setSelectedResourceId: (id: string | null) => void;
   setHoveredOperationId: (id: string | null) => void;
-  setZoomLevel: (level: 'hour' | 'day' | 'week') => void;
+  setZoomLevel: (level: 'hour' | 'day' | 'week' | 'month') => void;
   setSearchQuery: (query: string) => void;
   setWorkOrderFilter: (id: string | null) => void;
   setMachineFilter: (id: string | null) => void;
@@ -231,7 +231,21 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   setSelectedOperationId: (id) => set({ selectedOperationId: id }),
   setSelectedResourceId: (id) => set({ selectedResourceId: id }),
   setHoveredOperationId: (id) => set({ hoveredOperationId: id }),
-  setZoomLevel: (level) => set({ zoomLevel: level }),
+  setZoomLevel: (level) => {
+    const { timelineStart, timelineEnd } = get();
+    if (level === 'month') {
+      const startMs = timelineStart.getTime();
+      const currentDays = (timelineEnd.getTime() - startMs) / 86400000;
+      if (currentDays < 30) {
+        set({
+          zoomLevel: level,
+          timelineEnd: new Date(startMs + 32 * 86400000),
+        });
+        return;
+      }
+    }
+    set({ zoomLevel: level });
+  },
   setSearchQuery: (query) => set({ searchQuery: query }),
   setWorkOrderFilter: (id) => set({ workOrderFilter: id }),
   setMachineFilter: (id) => set({ machineFilter: id }),

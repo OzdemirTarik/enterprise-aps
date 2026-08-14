@@ -30,6 +30,7 @@ export const translations = {
     hourView: '1S',
     dayView: '1G',
     weekView: 'Vardiya/H',
+    monthView: '1A',
 
     // Categories
     allCenters: 'Tüm Merkezler (8)',
@@ -242,6 +243,7 @@ export const translations = {
     hourView: '1H',
     dayView: '1D',
     weekView: 'Shift/W',
+    monthView: '1M',
 
     // Categories
     allCenters: 'All Centers (8)',

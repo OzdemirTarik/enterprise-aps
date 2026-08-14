@@ -39,15 +39,25 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
   // hourWidth >= 75px: 1h steps (01:00, 02:00...)
   // hourWidth >= 40px: 2h steps (00:00, 02:00, 04:00...)
   // hourWidth >= 20px: 4h steps (00:00, 04:00, 08:00, 12:00...)
-  // hourWidth < 20px:  6h steps (00:00, 06:00, 12:00, 18:00...)
+  // hourWidth >= 10px: 6h steps (00:00, 06:00, 12:00, 18:00...)
+  // hourWidth < 10px:  12h steps (00:00, 12:00)
   const hourStep =
-    hourWidth >= 75 ? 1 : hourWidth >= 40 ? 2 : hourWidth >= 20 ? 4 : 6;
+    hourWidth >= 75
+      ? 1
+      : hourWidth >= 40
+      ? 2
+      : hourWidth >= 20
+      ? 4
+      : hourWidth >= 10
+      ? 6
+      : 12;
 
   const days = Array.from({ length: daysCount }).map((_, idx) => {
     const dayDate = addDays(timelineStart, idx);
+    const dayLabelFormat = hourWidth < 15 ? 'EEE, dd MMM' : 'EEE, dd MMM yyyy';
     return {
       date: dayDate,
-      label: format(dayDate, 'EEE, dd MMM yyyy', { locale: dateLocale }),
+      label: format(dayDate, dayLabelFormat, { locale: dateLocale }),
       width: 24 * hourWidth,
     };
   });
