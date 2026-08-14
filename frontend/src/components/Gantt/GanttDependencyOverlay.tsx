@@ -62,7 +62,8 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
       const childX = Math.max(0, ((childStartMs - timelineStartMs) / 60000) * minuteWidth);
       const childY = childResIdx * rowHeight + rowHeight / 2;
 
-      childOp.precedenceOperationIds.forEach((parentOpId) => {
+      const precs = childOp.precedenceOperationIds || [];
+      precs.forEach((parentOpId) => {
         const parentOp = operationMap.get(parentOpId);
         if (!parentOp) return;
 

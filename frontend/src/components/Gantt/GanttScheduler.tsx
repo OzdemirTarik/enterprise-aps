@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
+import { isValid } from 'date-fns';
 import { GanttTimelineRuler } from './GanttTimelineRuler';
 import { GanttSidebar } from './GanttSidebar';
 import { GanttRow } from './GanttRow';
@@ -12,18 +13,25 @@ const ROW_HEIGHT = 56;
 export const GanttScheduler: React.FC = () => {
   const resources = useScheduleStore((s) => s.resources);
   const zoomLevel = useScheduleStore((s) => s.zoomLevel);
-  const timelineStart = useScheduleStore((s) => s.timelineStart);
-  const timelineEnd = useScheduleStore((s) => s.timelineEnd);
+  const rawTimelineStart = useScheduleStore((s) => s.timelineStart);
+  const rawTimelineEnd = useScheduleStore((s) => s.timelineEnd);
   const setSelectedOperationId = useScheduleStore((s) => s.setSelectedOperationId);
   const workCenterCategory = useScheduleStore((s) => s.workCenterCategory);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
+  const timelineStart = isValid(rawTimelineStart)
+    ? rawTimelineStart
+    : new Date(new Date().setHours(6, 0, 0, 0));
+  const timelineEnd = isValid(rawTimelineEnd)
+    ? rawTimelineEnd
+    : new Date(new Date().setDate(new Date().getDate() + 3));
+
   // Zoom scale: pixel width per minute
   const minuteWidth = zoomLevel === 'hour' ? 4.0 : zoomLevel === 'day' ? 1.4 : 0.4;
 
-  const totalMinutes = (timelineEnd.getTime() - timelineStart.getTime()) / 60000;
+  const totalMinutes = Math.max(1440, (timelineEnd.getTime() - timelineStart.getTime()) / 60000);
   const canvasWidth = Math.max(1200, totalMinutes * minuteWidth);
 
   const resourceList = Object.values(resources).filter((r) => {

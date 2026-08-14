@@ -1,7 +1,7 @@
 import React from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
-import { addHours, format, differenceInHours, startOfDay, addDays, getDay } from 'date-fns';
+import { addHours, format, differenceInHours, startOfDay, addDays, getDay, isValid } from 'date-fns';
 import { tr, enUS } from 'date-fns/locale';
 
 interface GanttTimelineRulerProps {
@@ -14,12 +14,19 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
   canvasWidth,
 }) => {
   const { language } = useTranslation();
-  const timelineStart = useScheduleStore((state) => state.timelineStart);
-  const timelineEnd = useScheduleStore((state) => state.timelineEnd);
-  const shifts = useScheduleStore((state) => state.shifts);
+  const rawTimelineStart = useScheduleStore((state) => state.timelineStart);
+  const rawTimelineEnd = useScheduleStore((state) => state.timelineEnd);
+  const shifts = useScheduleStore((state) => state.shifts) || [];
+
+  const timelineStart = isValid(rawTimelineStart)
+    ? rawTimelineStart
+    : new Date(new Date().setHours(6, 0, 0, 0));
+  const timelineEnd = isValid(rawTimelineEnd)
+    ? rawTimelineEnd
+    : new Date(new Date().setDate(new Date().getDate() + 3));
 
   const hourWidth = minuteWidth * 60;
-  const totalHours = Math.max(24, differenceInHours(timelineEnd, timelineStart));
+  const totalHours = Math.max(24, Math.min(720, differenceInHours(timelineEnd, timelineStart)));
   const daysCount = Math.ceil(totalHours / 24);
 
   const dateLocale = language === 'tr' ? tr : enUS;
@@ -42,10 +49,11 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
 
     // Check if any active shift starts at this hour on this day
     const matchingShift = shifts.find((s) => {
-      if (!s.isActive) return false;
-      const days = s.daysOfWeek || [1, 2, 3, 4, 5, 6, 7];
-      if (!days.includes(isoDayNumber)) return false;
+      if (!s || !s.isActive) return false;
+      const daysList = s.daysOfWeek || [1, 2, 3, 4, 5, 6, 7];
+      if (!daysList.includes(isoDayNumber)) return false;
 
+      if (!s.startTime) return false;
       const shiftStartHour = parseInt(s.startTime.split(':')[0], 10);
       return shiftStartHour === hourNum;
     });
@@ -81,6 +89,10 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
       <div className="flex h-7 text-[11px] font-mono text-slate-400 relative">
         {hours.map((hr, idx) => {
           const shift = hr.matchingShift;
+          const shiftColor = shift?.colorCode || '#06b6d4';
+          const shiftName = shift?.name || 'Shift';
+          const nameParts = shiftName.split(' ');
+
           return (
             <div
               key={idx}
@@ -91,7 +103,7 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
               }`}
               style={{
                 width: `${hourWidth}px`,
-                borderRightColor: shift ? shift.colorCode : undefined,
+                borderRightColor: shift ? shiftColor : undefined,
               }}
             >
               <span className={shift ? 'text-slate-200 font-bold' : 'text-slate-400'}>
@@ -101,13 +113,13 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
                 <span
                   className="text-[9px] font-bold uppercase tracking-tighter truncate max-w-[110px] px-1 py-0.5 rounded"
                   style={{
-                    backgroundColor: `${shift.colorCode}20`,
-                    color: shift.colorCode,
-                    border: `1px solid ${shift.colorCode}40`,
+                    backgroundColor: `${shiftColor}20`,
+                    color: shiftColor,
+                    border: `1px solid ${shiftColor}40`,
                   }}
-                  title={`${shift.name} (${shift.startTime} - ${shift.endTime})`}
+                  title={`${shiftName} (${shift.startTime || ''} - ${shift.endTime || ''})`}
                 >
-                  {shift.name.split(' ')[0]} {shift.name.split(' ')[1] || ''}
+                  {nameParts[0]} {nameParts[1] || ''}
                 </span>
               )}
             </div>
