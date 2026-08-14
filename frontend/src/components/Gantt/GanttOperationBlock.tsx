@@ -65,12 +65,14 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     e.stopPropagation();
     setIsDragging(true);
     const startClientX = e.clientX;
+    let currentOffsetMin = 0;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaPx = moveEvent.clientX - startClientX;
       let rawDeltaMin = deltaPx / minuteWidth;
       // 15-minute magnetic snapping
       const snappedDeltaMin = Math.round(rawDeltaMin / 15) * 15;
+      currentOffsetMin = snappedDeltaMin;
       setDragOffsetMinutes(snappedDeltaMin);
     };
 
@@ -79,8 +81,8 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
       window.removeEventListener('mouseup', handleMouseUp);
       setIsDragging(false);
 
-      if (dragOffsetMinutes !== 0) {
-        const newStartMs = startMs + dragOffsetMinutes * 60000;
+      if (currentOffsetMin !== 0) {
+        const newStartMs = startMs + currentOffsetMin * 60000;
         rescheduleOptimistic(
           operation.id,
           operation.requiredResourceId,
@@ -102,6 +104,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     e.stopPropagation();
     setIsResizingRight(true);
     const startClientX = e.clientX;
+    let currentDeltaMin = 0;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaPx = moveEvent.clientX - startClientX;
@@ -109,6 +112,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
       const snappedDeltaMin = Math.round(rawDeltaMin / 15) * 15;
       const newDuration = operation.durationMinutes + snappedDeltaMin;
       if (newDuration >= 15) {
+        currentDeltaMin = snappedDeltaMin;
         setResizeDeltaMinutes(snappedDeltaMin);
       }
     };
@@ -118,7 +122,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
       window.removeEventListener('mouseup', handleMouseUp);
       setIsResizingRight(false);
 
-      const finalDuration = Math.max(15, operation.durationMinutes + resizeDeltaMinutes);
+      const finalDuration = Math.max(15, operation.durationMinutes + currentDeltaMin);
       if (finalDuration !== operation.durationMinutes) {
         resizeOperationOptimistic(operation.id, finalDuration);
       }

@@ -294,7 +294,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       );
       get().mergeScheduleDelta(delta);
     } catch (err) {
-      // Rollback
+      console.error('[rescheduleOperation failed, rolling back]', err);
       get().undo();
     }
   },
@@ -327,6 +327,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       const delta = await scheduleApi.resizeOperation(operationId, newDurationMinutes);
       get().mergeScheduleDelta(delta);
     } catch (err) {
+      console.error('[resizeOperation failed, rolling back]', err);
       get().undo();
     }
   },
@@ -398,10 +399,15 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     }
   },
 
-  mergeScheduleDelta: (delta) => {
-    if (!delta.success || !delta.affectedOperations) return;
+  mergeScheduleDelta: (delta: any) => {
+    if (!delta) return;
+    const isSuccess = delta.success !== undefined ? delta.success : (delta.Success ?? true);
+    if (!isSuccess) return;
+    const affected: Operation[] = delta.affectedOperations || delta.AffectedOperations || [];
+    if (!affected || affected.length === 0) return;
+
     const currentOps = { ...get().operations };
-    delta.affectedOperations.forEach((op) => {
+    affected.forEach((op) => {
       currentOps[op.id] = op;
     });
     set({ operations: currentOps });
