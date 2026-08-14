@@ -198,6 +198,19 @@ export const translations = {
     savingShifts: 'Vardiya Düzeni Kaydediliyor...',
     shiftsSavedSuccess: 'Vardiya düzeni başarıyla güncellendi!',
     offShiftNotice: 'Vardiya Dışı (Çalışma Yok)',
+
+    // Work Order Management & Deletion
+    workOrderListBtn: '📋 İş Emirleri',
+    workOrderManagerTitle: 'PCBA İş Emirleri Yönetimi',
+    workOrderManagerDesc: 'Kayıtlı tüm iş emirlerini görüntüleyin, çizelgede filtreleyin veya iş emrini bağlı tüm operasyonlarıyla birlikte silin.',
+    deleteWorkOrderFull: '🗑️ İş Emrini Sil (Tüm Operasyonlar)',
+    deleteWorkOrderConfirm: 'iş emrini ve bağlı tüm operasyonlarını silmek istediğinize emin misiniz?',
+    filterInGantt: 'Çizelgede Göster',
+    allWorkOrdersCount: 'Toplam İş Emri',
+    woDeletedSuccess: 'İş emri ve tüm operasyonları başarıyla silindi.',
+    workOrders: 'İş Emri',
+    releaseDate: 'Serbest Bırakma',
+    dueDate: 'Teslim Tarihi',
   },
 
   en: {
@@ -397,6 +410,19 @@ export const translations = {
     savingShifts: 'Applying Shift Pattern...',
     shiftsSavedSuccess: 'Shift pattern successfully updated!',
     offShiftNotice: 'Off-Shift (Non-Working)',
+
+    // Work Order Management & Deletion
+    workOrderListBtn: '📋 Work Orders',
+    workOrderManagerTitle: 'PCBA Work Orders Management',
+    workOrderManagerDesc: 'View active work orders, filter within the Gantt timeline, or delete entire work orders with all operations.',
+    deleteWorkOrderFull: '🗑️ Delete Work Order (All Ops)',
+    deleteWorkOrderConfirm: 'Are you sure you want to delete this work order and all of its associated operations?',
+    filterInGantt: 'Filter in Gantt',
+    allWorkOrdersCount: 'Total Work Orders',
+    woDeletedSuccess: 'Work order and all operations were deleted successfully.',
+    workOrders: 'Work Orders',
+    releaseDate: 'Release Date',
+    dueDate: 'Due Date',
   },
 };
 

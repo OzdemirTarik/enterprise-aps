@@ -9,7 +9,10 @@ export const GanttContextMenu: React.FC = () => {
   const setSelectedOperationId = useScheduleStore((s) => s.setSelectedOperationId);
   const setIsSplitModalOpen = useScheduleStore((s) => s.setIsSplitModalOpen);
   const deleteOperation = useScheduleStore((s) => s.deleteOperation);
+  const deleteWorkOrder = useScheduleStore((s) => s.deleteWorkOrder);
   const operations = useScheduleStore((s) => s.operations);
+  const workOrders = useScheduleStore((s) => s.workOrders);
+  const fetchSchedule = useScheduleStore((s) => s.fetchSchedule);
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +79,30 @@ export const GanttContextMenu: React.FC = () => {
       >
         <span className="text-sm">🗑️</span>
         <span>{t('contextDelete')}</span>
+      </button>
+
+      <button
+        onClick={async () => {
+          const wo = workOrders[currentOp.workOrderId];
+          const woNumber = wo?.orderNumber || currentOp.workOrderId;
+          const opCount = Object.values(operations).filter(
+            (o) => o.workOrderId === currentOp.workOrderId
+          ).length;
+          if (
+            confirm(
+              `'${woNumber}' ${t('deleteWorkOrderConfirm')} (${opCount} ${t('routingSteps')})`
+            )
+          ) {
+            await deleteWorkOrder(currentOp.workOrderId);
+            setSelectedOperationId(null);
+            await fetchSchedule();
+          }
+          setContextMenu(null);
+        }}
+        className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors font-semibold"
+      >
+        <span className="text-sm">💥</span>
+        <span>{t('deleteWorkOrderFull')}</span>
       </button>
     </div>
   );

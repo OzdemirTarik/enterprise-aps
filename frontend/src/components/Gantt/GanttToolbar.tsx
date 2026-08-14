@@ -15,7 +15,9 @@ import {
   Cpu,
   Layers,
   Activity,
-  ShieldAlert
+  ShieldAlert,
+  ClipboardList,
+  Trash2,
 } from 'lucide-react';
 
 export const GanttToolbar: React.FC = () => {
@@ -23,6 +25,8 @@ export const GanttToolbar: React.FC = () => {
   const zoomLevel = useScheduleStore((state) => state.zoomLevel);
   const setZoomLevel = useScheduleStore((state) => state.setZoomLevel);
   const workOrders = useScheduleStore((state) => state.workOrders);
+  const operations = useScheduleStore((state) => state.operations);
+  const deleteWorkOrder = useScheduleStore((state) => state.deleteWorkOrder);
   const shifts = useScheduleStore((state) => state.shifts);
 
   const searchQuery = useScheduleStore((state) => state.searchQuery);
@@ -40,6 +44,7 @@ export const GanttToolbar: React.FC = () => {
   const redo = useScheduleStore((state) => state.redo);
 
   const setIsCreateWorkOrderOpen = useScheduleStore((state) => state.setIsCreateWorkOrderOpen);
+  const setIsWorkOrderManagerOpen = useScheduleStore((state) => state.setIsWorkOrderManagerOpen);
   const setIsResourceManagerOpen = useScheduleStore((state) => state.setIsResourceManagerOpen);
   const setIsAddDowntimeOpen = useScheduleStore((state) => state.setIsAddDowntimeOpen);
   const setIsShiftManagerOpen = useScheduleStore((state) => state.setIsShiftManagerOpen);
@@ -66,6 +71,15 @@ export const GanttToolbar: React.FC = () => {
         >
           <Plus className="w-4 h-4" />
           <span>{t('newWorkOrder')}</span>
+        </button>
+
+        <button
+          onClick={() => setIsWorkOrderManagerOpen(true)}
+          className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+          title={t('workOrderListBtn')}
+        >
+          <ClipboardList className="w-3.5 h-3.5 text-cyan-400" />
+          <span>{t('workOrderListBtn')} ({workOrderList.length})</span>
         </button>
 
         <button
@@ -155,6 +169,32 @@ export const GanttToolbar: React.FC = () => {
               </option>
             ))}
           </select>
+
+          {workOrderFilter && (
+            <button
+              type="button"
+              onClick={async () => {
+                const targetWo = workOrders[workOrderFilter];
+                if (!targetWo) return;
+                const woOps = Object.values(operations).filter(
+                  (o) => o.workOrderId === workOrderFilter
+                );
+                if (
+                  window.confirm(
+                    `'${targetWo.orderNumber}' ${t('deleteWorkOrderConfirm')} (${woOps.length} ${t('routingSteps')})`
+                  )
+                ) {
+                  await deleteWorkOrder(workOrderFilter);
+                  setWorkOrderFilter(null);
+                  await fetchSchedule();
+                }
+              }}
+              className="text-rose-400 hover:text-rose-300 hover:bg-rose-950 p-1 rounded transition-colors"
+              title={t('deleteWorkOrderFull')}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Status Filter */}

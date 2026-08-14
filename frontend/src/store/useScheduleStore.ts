@@ -55,6 +55,7 @@ interface ScheduleStore {
   isResourceManagerOpen: boolean;
   isAddDowntimeOpen: boolean;
   isShiftManagerOpen: boolean;
+  isWorkOrderManagerOpen: boolean;
   isSplitModalOpen: boolean;
   splitTargetOperationId: string | null;
   isAutoScheduleOpen: boolean;
@@ -81,6 +82,7 @@ interface ScheduleStore {
   setIsResourceManagerOpen: (open: boolean) => void;
   setIsAddDowntimeOpen: (open: boolean) => void;
   setIsShiftManagerOpen: (open: boolean) => void;
+  setIsWorkOrderManagerOpen: (open: boolean) => void;
   setIsSplitModalOpen: (open: boolean, operationId?: string | null) => void;
   setIsAutoScheduleOpen: (open: boolean) => void;
   updateShiftPattern: (shifts: ShiftSchedule[]) => Promise<void>;
@@ -165,6 +167,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   isResourceManagerOpen: false,
   isAddDowntimeOpen: false,
   isShiftManagerOpen: false,
+  isWorkOrderManagerOpen: false,
   isSplitModalOpen: false,
   splitTargetOperationId: null,
   isAutoScheduleOpen: false,
@@ -246,6 +249,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   setIsResourceManagerOpen: (open) => set({ isResourceManagerOpen: open }),
   setIsAddDowntimeOpen: (open) => set({ isAddDowntimeOpen: open }),
   setIsShiftManagerOpen: (open) => set({ isShiftManagerOpen: open }),
+  setIsWorkOrderManagerOpen: (open) => set({ isWorkOrderManagerOpen: open }),
   setIsSplitModalOpen: (open, opId = null) =>
     set({ isSplitModalOpen: open, splitTargetOperationId: opId }),
   setIsAutoScheduleOpen: (open) => set({ isAutoScheduleOpen: open }),
@@ -450,7 +454,13 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   setWorkOrderDeleted: (workOrderId) => {
     const workOrders = { ...get().workOrders };
     delete workOrders[workOrderId];
-    set({ workOrders });
+    const updatedOps = { ...get().operations };
+    Object.keys(updatedOps).forEach((opId) => {
+      if (updatedOps[opId].workOrderId === workOrderId) {
+        delete updatedOps[opId];
+      }
+    });
+    set({ workOrders, operations: updatedOps });
   },
 
   setDowntimeUpdated: (downtime) => {

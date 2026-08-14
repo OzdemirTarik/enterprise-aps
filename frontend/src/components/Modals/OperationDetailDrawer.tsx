@@ -12,6 +12,7 @@ export const OperationDetailDrawer: React.FC = () => {
   const resources = useScheduleStore((s) => s.resources);
   const workOrders = useScheduleStore((s) => s.workOrders);
   const deleteOperation = useScheduleStore((s) => s.deleteOperation);
+  const deleteWorkOrder = useScheduleStore((s) => s.deleteWorkOrder);
   const fetchSchedule = useScheduleStore((s) => s.fetchSchedule);
 
   const operation = selectedOperationId ? operations[selectedOperationId] : null;
@@ -276,6 +277,29 @@ export const OperationDetailDrawer: React.FC = () => {
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>{t('deleteOp')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              const woNumber = workOrder?.orderNumber || operation.workOrderId;
+              const opCount = Object.values(operations).filter(
+                (o) => o.workOrderId === operation.workOrderId
+              ).length;
+              if (
+                confirm(
+                  `'${woNumber}' ${t('deleteWorkOrderConfirm')} (${opCount} ${t('routingSteps')})`
+                )
+              ) {
+                await deleteWorkOrder(operation.workOrderId);
+                setSelectedOperationId(null);
+                await fetchSchedule();
+              }
+            }}
+            className="w-full bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-600/60 font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+            <span>{t('deleteWorkOrderFull')}</span>
           </button>
         </div>
       </form>
