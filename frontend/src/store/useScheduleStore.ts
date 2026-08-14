@@ -140,6 +140,19 @@ interface ScheduleStore {
 
   deleteOperation: (operationId: string) => Promise<void>;
   deleteWorkOrder: (workOrderId: string) => Promise<void>;
+  updateResource: (
+    id: string,
+    data: {
+      name: string;
+      code: string;
+      type: string;
+      capacity: number;
+      workingHoursPerDay: number;
+      hourlyRate: number;
+      colorHex: string;
+      isActive: boolean;
+    }
+  ) => Promise<void>;
   deleteResource: (resourceId: string) => Promise<void>;
   deleteDowntime: (downtimeId: string) => Promise<void>;
 
@@ -510,6 +523,17 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       set({ workOrders: updatedWos, operations: updatedOps });
     } catch (err: any) {
       set({ error: err.message || 'Failed to delete work order' });
+    }
+  },
+
+  updateResource: async (id, data) => {
+    try {
+      const updated = await scheduleApi.updateResource(id, data);
+      const resMap = { ...get().resources, [id]: updated };
+      set({ resources: resMap });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to update resource' });
+      throw err;
     }
   },
 
