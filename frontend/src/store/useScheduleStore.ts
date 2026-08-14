@@ -5,6 +5,7 @@ import {
   WorkOrder,
   SetupMatrixItem,
   ResourceDowntime,
+  ShiftSchedule,
   LockInfo,
   ScheduleKpis,
   UserPresence,
@@ -24,6 +25,7 @@ interface ScheduleStore {
   workOrders: Record<string, WorkOrder>;
   setupMatrices: SetupMatrixItem[];
   downtimes: Record<string, ResourceDowntime>;
+  shifts: ShiftSchedule[];
   locks: Record<string, LockInfo>;
   presence: Record<string, UserPresence>;
   kpis: ScheduleKpis | null;
@@ -52,6 +54,7 @@ interface ScheduleStore {
   isCreateWorkOrderOpen: boolean;
   isResourceManagerOpen: boolean;
   isAddDowntimeOpen: boolean;
+  isShiftManagerOpen: boolean;
   isSplitModalOpen: boolean;
   splitTargetOperationId: string | null;
   isAutoScheduleOpen: boolean;
@@ -77,8 +80,10 @@ interface ScheduleStore {
   setIsCreateWorkOrderOpen: (open: boolean) => void;
   setIsResourceManagerOpen: (open: boolean) => void;
   setIsAddDowntimeOpen: (open: boolean) => void;
+  setIsShiftManagerOpen: (open: boolean) => void;
   setIsSplitModalOpen: (open: boolean, operationId?: string | null) => void;
   setIsAutoScheduleOpen: (open: boolean) => void;
+  updateShiftPattern: (shifts: ShiftSchedule[]) => Promise<void>;
 
   // Mutations
   rescheduleOptimistic: (
@@ -127,20 +132,21 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   workOrders: {},
   setupMatrices: [],
   downtimes: {},
+  shifts: [],
   locks: {},
   presence: {},
   kpis: null,
 
   zoomLevel: 'day',
-  timelineStart: new Date(new Date().setHours(0, 0, 0, 0)),
+  timelineStart: new Date(new Date().setHours(6, 0, 0, 0)),
   timelineEnd: new Date(new Date().setDate(new Date().getDate() + 3)),
   selectedOperationId: null,
   selectedResourceId: null,
   hoveredOperationId: null,
   activeLockUser: {
-    userId: `USR-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-    userName: `Planner ${Math.floor(Math.random() * 90 + 10)}`,
-    userColor: ['#38bdf8', '#4ade80', '#fbbf24', '#f472b6', '#a78bfa'][
+    userId: `user-${Math.random().toString(36).substring(2, 7)}`,
+    userName: 'Planner ' + Math.floor(Math.random() * 90 + 10),
+    userColor: ['#38bdf8', '#fbbf24', '#34d399', '#f472b6', '#a78bfa'][
       Math.floor(Math.random() * 5)
     ],
   },
@@ -158,6 +164,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   isCreateWorkOrderOpen: false,
   isResourceManagerOpen: false,
   isAddDowntimeOpen: false,
+  isShiftManagerOpen: false,
   isSplitModalOpen: false,
   splitTargetOperationId: null,
   isAutoScheduleOpen: false,
@@ -198,6 +205,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         workOrders: workOrdersMap,
         setupMatrices: data.setupMatrices || [],
         downtimes: downtimesMap,
+        shifts: data.shifts || [],
         locks: locksMap,
         kpis: data.kpis,
         timelineStart: tStart,
@@ -229,9 +237,20 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   setIsCreateWorkOrderOpen: (open) => set({ isCreateWorkOrderOpen: open }),
   setIsResourceManagerOpen: (open) => set({ isResourceManagerOpen: open }),
   setIsAddDowntimeOpen: (open) => set({ isAddDowntimeOpen: open }),
+  setIsShiftManagerOpen: (open) => set({ isShiftManagerOpen: open }),
   setIsSplitModalOpen: (open, opId = null) =>
     set({ isSplitModalOpen: open, splitTargetOperationId: opId }),
   setIsAutoScheduleOpen: (open) => set({ isAutoScheduleOpen: open }),
+
+  updateShiftPattern: async (newShifts) => {
+    try {
+      const updated = await scheduleApi.updateShiftPattern(newShifts);
+      set({ shifts: updated });
+    } catch (err: any) {
+      console.error('Failed to update shifts pattern:', err);
+      throw err;
+    }
+  },
 
   rescheduleOptimistic: async (operationId, targetResourceId, targetStartTime) => {
     const { operations, undoStack, activeLockUser } = get();

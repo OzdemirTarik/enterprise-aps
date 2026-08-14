@@ -1,7 +1,7 @@
 import React from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
-import { addHours, format, differenceInHours, startOfDay, addDays } from 'date-fns';
+import { addHours, format, differenceInHours, startOfDay, addDays, getDay } from 'date-fns';
 import { tr, enUS } from 'date-fns/locale';
 
 interface GanttTimelineRulerProps {
@@ -13,9 +13,10 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
   minuteWidth,
   canvasWidth,
 }) => {
-  const { t, language } = useTranslation();
+  const { language } = useTranslation();
   const timelineStart = useScheduleStore((state) => state.timelineStart);
   const timelineEnd = useScheduleStore((state) => state.timelineEnd);
+  const shifts = useScheduleStore((state) => state.shifts);
 
   const hourWidth = minuteWidth * 60;
   const totalHours = Math.max(24, differenceInHours(timelineEnd, timelineStart));
@@ -35,16 +36,24 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
   const hours = Array.from({ length: totalHours }).map((_, idx) => {
     const hourDate = addHours(timelineStart, idx);
     const hourNum = hourDate.getHours();
+    // In date-fns: 0 is Sunday, 1 is Monday... convert to 1=Monday..7=Sunday
+    const jsDay = getDay(hourDate);
+    const isoDayNumber = jsDay === 0 ? 7 : jsDay;
 
-    let shiftBadge = '';
-    if (hourNum === 8) shiftBadge = t('shift1');
-    if (hourNum === 16) shiftBadge = t('shift2');
-    if (hourNum === 0) shiftBadge = t('shift3');
+    // Check if any active shift starts at this hour on this day
+    const matchingShift = shifts.find((s) => {
+      if (!s.isActive) return false;
+      const days = s.daysOfWeek || [1, 2, 3, 4, 5, 6, 7];
+      if (!days.includes(isoDayNumber)) return false;
+
+      const shiftStartHour = parseInt(s.startTime.split(':')[0], 10);
+      return shiftStartHour === hourNum;
+    });
 
     return {
       date: hourDate,
       hourNum,
-      shiftBadge,
+      matchingShift,
       label: format(hourDate, 'HH:00'),
       offset: idx * hourWidth,
     };
@@ -68,26 +77,42 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
         ))}
       </div>
 
-      {/* Bottom Layer: Hours & Shift Bands */}
+      {/* Bottom Layer: Hours & Dynamic Shift Bands */}
       <div className="flex h-7 text-[11px] font-mono text-slate-400 relative">
-        {hours.map((hr, idx) => (
-          <div
-            key={idx}
-            className={`flex items-center justify-between px-1.5 border-r border-slate-800/50 shrink-0 ${
-              hr.hourNum % 8 === 0 ? 'border-r-2 border-r-slate-700 bg-slate-800/20' : ''
-            }`}
-            style={{ width: `${hourWidth}px` }}
-          >
-            <span className={hr.hourNum % 8 === 0 ? 'text-slate-200 font-bold' : 'text-slate-400'}>
-              {hr.label}
-            </span>
-            {hr.shiftBadge && hourWidth > 60 && (
-              <span className="text-[9px] font-bold text-amber-400/80 uppercase tracking-tighter truncate max-w-[90px]">
-                {hr.shiftBadge.split(' ')[0]} {hr.shiftBadge.split(' ')[1] || ''}
+        {hours.map((hr, idx) => {
+          const shift = hr.matchingShift;
+          return (
+            <div
+              key={idx}
+              className={`flex items-center justify-between px-1.5 border-r shrink-0 transition-colors ${
+                shift
+                  ? 'border-r-2 bg-slate-800/30 font-semibold'
+                  : 'border-slate-800/50'
+              }`}
+              style={{
+                width: `${hourWidth}px`,
+                borderRightColor: shift ? shift.colorCode : undefined,
+              }}
+            >
+              <span className={shift ? 'text-slate-200 font-bold' : 'text-slate-400'}>
+                {hr.label}
               </span>
-            )}
-          </div>
-        ))}
+              {shift && hourWidth > 45 && (
+                <span
+                  className="text-[9px] font-bold uppercase tracking-tighter truncate max-w-[110px] px-1 py-0.5 rounded"
+                  style={{
+                    backgroundColor: `${shift.colorCode}20`,
+                    color: shift.colorCode,
+                    border: `1px solid ${shift.colorCode}40`,
+                  }}
+                  title={`${shift.name} (${shift.startTime} - ${shift.endTime})`}
+                >
+                  {shift.name.split(' ')[0]} {shift.name.split(' ')[1] || ''}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

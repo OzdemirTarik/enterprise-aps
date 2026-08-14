@@ -74,6 +74,19 @@ CREATE TABLE IF NOT EXISTS resource_downtimes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Shift Schedules (Working shifts: 1, 2, 3 shifts, customizable hours & days)
+CREATE TABLE IF NOT EXISTS shift_schedules (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    start_time VARCHAR(10) NOT NULL,
+    end_time VARCHAR(10) NOT NULL,
+    days_of_week INTEGER[] DEFAULT '{1,2,3,4,5,6,7}',
+    color_code VARCHAR(20) DEFAULT '#06b6d4',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    display_order INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Schedule Snapshots (For schedule versioning / audit)
 CREATE TABLE IF NOT EXISTS schedule_snapshots (
     id VARCHAR(50) PRIMARY KEY,

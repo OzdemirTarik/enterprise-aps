@@ -94,6 +94,10 @@ class SignalRService {
     this.connection.on('OnDowntimeDeleted', (downtimeId: string) => {
       useScheduleStore.getState().setDowntimeDeleted(downtimeId);
     });
+
+    this.connection.on('OnShiftsUpdated', (shifts: any) => {
+      useScheduleStore.setState({ shifts });
+    });
   }
 
   public async broadcastPresence(

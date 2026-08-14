@@ -4,6 +4,7 @@ import { useTranslation } from '../../i18n/useTranslation';
 import {
   Plus,
   Settings,
+  Clock,
   AlertTriangle,
   Play,
   RotateCcw,
@@ -22,6 +23,7 @@ export const GanttToolbar: React.FC = () => {
   const zoomLevel = useScheduleStore((state) => state.zoomLevel);
   const setZoomLevel = useScheduleStore((state) => state.setZoomLevel);
   const workOrders = useScheduleStore((state) => state.workOrders);
+  const shifts = useScheduleStore((state) => state.shifts);
 
   const searchQuery = useScheduleStore((state) => state.searchQuery);
   const setSearchQuery = useScheduleStore((state) => state.setSearchQuery);
@@ -40,6 +42,7 @@ export const GanttToolbar: React.FC = () => {
   const setIsCreateWorkOrderOpen = useScheduleStore((state) => state.setIsCreateWorkOrderOpen);
   const setIsResourceManagerOpen = useScheduleStore((state) => state.setIsResourceManagerOpen);
   const setIsAddDowntimeOpen = useScheduleStore((state) => state.setIsAddDowntimeOpen);
+  const setIsShiftManagerOpen = useScheduleStore((state) => state.setIsShiftManagerOpen);
   const setIsAutoScheduleOpen = useScheduleStore((state) => state.setIsAutoScheduleOpen);
   const fetchSchedule = useScheduleStore((state) => state.fetchSchedule);
 
@@ -72,6 +75,15 @@ export const GanttToolbar: React.FC = () => {
         >
           <Settings className="w-3.5 h-3.5 text-cyan-400" />
           <span>{t('lineManager')}</span>
+        </button>
+
+        <button
+          onClick={() => setIsShiftManagerOpen(true)}
+          className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition-colors"
+          title={t('shiftSettings')}
+        >
+          <Clock className="w-3.5 h-3.5 text-cyan-400" />
+          <span>{t('shiftSettings')} ({shifts.length})</span>
         </button>
 
         <button

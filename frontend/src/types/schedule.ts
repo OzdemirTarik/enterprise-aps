@@ -109,12 +109,24 @@ export interface ScheduleKpis {
   scheduleEnd: string;
 }
 
+export interface ShiftSchedule {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  daysOfWeek: number[];
+  colorCode: string;
+  isActive: boolean;
+  displayOrder: number;
+}
+
 export interface GanttScheduleResponse {
   resources: Resource[];
   operations: Operation[];
   workOrders: WorkOrder[];
   setupMatrices: SetupMatrixItem[];
   downtimes: ResourceDowntime[];
+  shifts?: ShiftSchedule[];
   locks: LockInfo[];
   kpis: ScheduleKpis;
 }

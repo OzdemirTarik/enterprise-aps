@@ -16,4 +16,5 @@ public interface ISchedulingHubClient
     Task OnResourceUnlocked(string resourceId);
     Task OnUserPresence(UserPresenceDto userPresence);
     Task OnKpiUpdated(ScheduleKpiDto kpis);
+    Task OnShiftsUpdated(List<ShiftScheduleDto> shifts);
 }

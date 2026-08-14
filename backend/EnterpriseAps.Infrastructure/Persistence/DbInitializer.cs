@@ -32,6 +32,7 @@ public static class DbInitializer
                 await context.Operations.AddRangeAsync(operations);
                 await context.SetupMatrices.AddRangeAsync(setupMatrices);
                 await context.ResourceDowntimes.AddRangeAsync(downtimes);
+                await context.ShiftSchedules.AddRangeAsync(ShiftSchedule.GetDefaultThreeShifts());
                 await context.SaveChangesAsync();
 
                 logger.LogInformation("Master data successfully seeded into PostgreSQL. Initializing in-memory DAG...");
@@ -39,6 +40,13 @@ public static class DbInitializer
             }
             else
             {
+                var shiftCount = await context.ShiftSchedules.CountAsync();
+                if (shiftCount == 0)
+                {
+                    await context.ShiftSchedules.AddRangeAsync(ShiftSchedule.GetDefaultThreeShifts());
+                    await context.SaveChangesAsync();
+                }
+
                 logger.LogInformation("Loading master schedule data from PostgreSQL into In-Memory Graph Engine...");
                 var resources = await context.Resources.ToListAsync();
                 var workOrders = await context.WorkOrders.ToListAsync();

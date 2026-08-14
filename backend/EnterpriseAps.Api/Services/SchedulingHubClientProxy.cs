@@ -73,4 +73,9 @@ public class SchedulingHubClientProxy : ISchedulingHubClient
     {
         await _hubContext.Clients.All.OnKpiUpdated(kpis);
     }
+
+    public async Task OnShiftsUpdated(List<ShiftScheduleDto> shifts)
+    {
+        await _hubContext.Clients.All.OnShiftsUpdated(shifts);
+    }
 }

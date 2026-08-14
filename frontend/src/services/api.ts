@@ -8,6 +8,7 @@ import {
   Operation,
   ResourceDowntime,
   SetupMatrixItem,
+  ShiftSchedule,
 } from '../types/schedule';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -258,5 +259,25 @@ export const scheduleApi = {
     request<{ success: boolean }>('/locks/release', {
       method: 'POST',
       body: JSON.stringify({ resourceId, userId }),
+    }),
+
+  // Shift Schedules
+  getShifts: (): Promise<ShiftSchedule[]> => request<ShiftSchedule[]>('/shifts'),
+
+  updateShiftPattern: (shifts: ShiftSchedule[]): Promise<ShiftSchedule[]> =>
+    request<ShiftSchedule[]>('/shifts/pattern', {
+      method: 'PUT',
+      body: JSON.stringify({ shifts }),
+    }),
+
+  createShift: (data: Partial<ShiftSchedule>): Promise<ShiftSchedule> =>
+    request<ShiftSchedule>('/shifts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteShift: (id: string): Promise<void> =>
+    request<void>(`/shifts/${id}`, {
+      method: 'DELETE',
     }),
 };

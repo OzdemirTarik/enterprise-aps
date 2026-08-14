@@ -16,6 +16,7 @@ public class ApsDbContext : DbContext, IApplicationDbContext
     public DbSet<SetupMatrixItem> SetupMatrices => Set<SetupMatrixItem>();
     public DbSet<Constraint> Constraints => Set<Constraint>();
     public DbSet<ResourceDowntime> ResourceDowntimes => Set<ResourceDowntime>();
+    public DbSet<ShiftSchedule> ShiftSchedules => Set<ShiftSchedule>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -112,6 +113,21 @@ public class ApsDbContext : DbContext, IApplicationDbContext
             entity.Property(e => e.StartTime).HasColumnName("start_time");
             entity.Property(e => e.EndTime).HasColumnName("end_time");
             entity.Property(e => e.IsPlanned).HasColumnName("is_planned").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<ShiftSchedule>(entity =>
+        {
+            entity.ToTable("shift_schedules");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").HasMaxLength(50);
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.StartTime).HasColumnName("start_time").HasMaxLength(10).IsRequired();
+            entity.Property(e => e.EndTime).HasColumnName("end_time").HasMaxLength(10).IsRequired();
+            entity.Property(e => e.DaysOfWeek).HasColumnName("days_of_week");
+            entity.Property(e => e.ColorCode).HasColumnName("color_code").HasMaxLength(20).HasDefaultValue("#06b6d4");
+            entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.DisplayOrder).HasColumnName("display_order").HasDefaultValue(1);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         });
     }

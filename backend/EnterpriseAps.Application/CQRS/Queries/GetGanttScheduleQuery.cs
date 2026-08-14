@@ -2,6 +2,7 @@ using EnterpriseAps.Application.Common.Interfaces;
 using EnterpriseAps.Application.DTOs;
 using EnterpriseAps.Domain.Graph;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnterpriseAps.Application.CQRS.Queries;
 
@@ -11,11 +12,16 @@ public class GetGanttScheduleQueryHandler : IRequestHandler<GetGanttScheduleQuer
 {
     private readonly IScheduleGraph _graph;
     private readonly IRedisLockService _redisLockService;
+    private readonly IApplicationDbContext _context;
 
-    public GetGanttScheduleQueryHandler(IScheduleGraph graph, IRedisLockService redisLockService)
+    public GetGanttScheduleQueryHandler(
+        IScheduleGraph graph, 
+        IRedisLockService redisLockService,
+        IApplicationDbContext context)
     {
         _graph = graph;
         _redisLockService = redisLockService;
+        _context = context;
     }
 
     public async Task<GanttScheduleDto> Handle(GetGanttScheduleQuery request, CancellationToken cancellationToken)
@@ -27,6 +33,10 @@ public class GetGanttScheduleQueryHandler : IRequestHandler<GetGanttScheduleQuer
         var downtimes = _graph.GetAllDowntimes();
         var activeLocks = await _redisLockService.GetAllLocksAsync();
         var kpis = _graph.CalculateKpis();
+
+        var shifts = await _context.ShiftSchedules
+            .OrderBy(s => s.DisplayOrder)
+            .ToListAsync(cancellationToken);
 
         return new GanttScheduleDto
         {
@@ -95,6 +105,18 @@ public class GetGanttScheduleQueryHandler : IRequestHandler<GetGanttScheduleQuer
                 StartTime = d.StartTime,
                 EndTime = d.EndTime,
                 IsPlanned = d.IsPlanned
+            }).ToList(),
+
+            Shifts = shifts.Select(sh => new ShiftScheduleDto
+            {
+                Id = sh.Id,
+                Name = sh.Name,
+                StartTime = sh.StartTime,
+                EndTime = sh.EndTime,
+                DaysOfWeek = sh.DaysOfWeek,
+                ColorCode = sh.ColorCode,
+                IsActive = sh.IsActive,
+                DisplayOrder = sh.DisplayOrder
             }).ToList(),
 
             Locks = activeLocks.Select(l => new LockInfoDto

@@ -11,6 +11,7 @@ public interface IApplicationDbContext
     DbSet<SetupMatrixItem> SetupMatrices { get; }
     DbSet<Constraint> Constraints { get; }
     DbSet<ResourceDowntime> ResourceDowntimes { get; }
+    DbSet<ShiftSchedule> ShiftSchedules { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -9,6 +9,7 @@ import { AutoScheduleModal } from './components/Modals/AutoScheduleModal';
 import { CreateWorkOrderModal } from './components/Modals/CreateWorkOrderModal';
 import { ResourceManagerModal } from './components/Modals/ResourceManagerModal';
 import { AddDowntimeModal } from './components/Modals/AddDowntimeModal';
+import { ShiftManagerModal } from './components/Modals/ShiftManagerModal';
 import { SplitOperationModal } from './components/Modals/SplitOperationModal';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
@@ -52,6 +53,7 @@ export const App: React.FC = () => {
       {/* 5. Interactive Modals */}
       <CreateWorkOrderModal />
       <ResourceManagerModal />
+      <ShiftManagerModal />
       <AddDowntimeModal />
       <SplitOperationModal />
       <AutoScheduleModal />
