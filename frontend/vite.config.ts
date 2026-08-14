@@ -12,7 +12,7 @@ export default defineConfig({
       interval: 100
     },
     hmr: {
-      clientPort: 24678
+      clientPort: 3000
     },
     proxy: {
       '/api': {
