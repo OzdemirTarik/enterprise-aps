@@ -16,6 +16,7 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarSc
   const kpis = useScheduleStore((state) => state.kpis);
   const activeLockUser = useScheduleStore((state) => state.activeLockUser);
   const workCenterCategory = useScheduleStore((state) => state.workCenterCategory);
+  const isHeatmapActive = useScheduleStore((state) => state.isHeatmapActive);
 
   const resourceList = Object.values(resources).filter((r) => {
     if (workCenterCategory === 'ALL') return true;
@@ -154,19 +155,29 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarSc
 
               {/* Line 2: Real-Time Utilization Progress Bar */}
               <div className="mt-1 flex items-center space-x-2">
-                <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                <div
+                  className={`w-full bg-slate-800 rounded-full overflow-hidden transition-all ${
+                    isHeatmapActive ? 'h-1.5' : 'h-1'
+                  }`}
+                >
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
-                      utilPercent > 80
-                        ? 'bg-amber-500'
-                        : utilPercent > 40
-                        ? 'bg-emerald-500'
-                        : 'bg-cyan-500'
+                      utilPercent > 85
+                        ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.8)]'
+                        : utilPercent > 50
+                        ? 'bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.7)]'
+                        : 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]'
                     }`}
                     style={{ width: `${utilPercent}%` }}
                   />
                 </div>
-                <span className="text-[10px] font-mono text-slate-400 flex-shrink-0 w-7 text-right">
+                <span
+                  className={`text-[10px] font-mono flex-shrink-0 w-7 text-right ${
+                    isHeatmapActive && utilPercent > 85
+                      ? 'text-rose-400 font-bold'
+                      : 'text-slate-400'
+                  }`}
+                >
                   {utilPercent}%
                 </span>
               </div>

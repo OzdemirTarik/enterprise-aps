@@ -21,6 +21,9 @@ import {
   Compass,
   HelpCircle,
   X,
+  Link2,
+  Flame,
+  Calendar,
 } from 'lucide-react';
 
 export const GanttToolbar: React.FC = () => {
@@ -53,7 +56,14 @@ export const GanttToolbar: React.FC = () => {
   const setIsShiftManagerOpen = useScheduleStore((state) => state.setIsShiftManagerOpen);
   const setIsAutoScheduleOpen = useScheduleStore((state) => state.setIsAutoScheduleOpen);
   const setIsShortcutsOpen = useScheduleStore((state) => state.setIsShortcutsOpen);
+  const isChainDragActive = useScheduleStore((state) => state.isChainDragActive);
+  const setIsChainDragActive = useScheduleStore((state) => state.setIsChainDragActive);
+  const isCriticalPathActive = useScheduleStore((state) => state.isCriticalPathActive);
+  const setIsCriticalPathActive = useScheduleStore((state) => state.setIsCriticalPathActive);
+  const isHeatmapActive = useScheduleStore((state) => state.isHeatmapActive);
+  const setIsHeatmapActive = useScheduleStore((state) => state.setIsHeatmapActive);
   const triggerScrollToNow = useScheduleStore((state) => state.triggerScrollToNow);
+  const triggerScrollToDate = useScheduleStore((state) => state.triggerScrollToDate);
   const fetchSchedule = useScheduleStore((state) => state.fetchSchedule);
 
   const workOrderList = Object.values(workOrders);
@@ -143,6 +153,51 @@ export const GanttToolbar: React.FC = () => {
             </button>
           );
         })}
+      </div>
+
+      {/* Advanced Planning & Analytics Toggles (Chain Drag, CPM, Heatmap) */}
+      <div className="flex items-center space-x-1.5 border-l border-r border-slate-800/80 px-2">
+        <button
+          type="button"
+          onClick={() => setIsChainDragActive(!isChainDragActive)}
+          className={`flex items-center space-x-1 px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
+            isChainDragActive
+              ? 'bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-950 font-bold'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+          }`}
+          title={t('chainDragHelp')}
+        >
+          <Link2 className="w-3.5 h-3.5" />
+          <span>{t('chainDrag')}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsCriticalPathActive(!isCriticalPathActive)}
+          className={`flex items-center space-x-1 px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
+            isCriticalPathActive
+              ? 'bg-rose-600 text-white border-rose-500 shadow-sm shadow-rose-950 font-bold'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+          }`}
+          title={t('criticalPathDesc')}
+        >
+          <Flame className="w-3.5 h-3.5" />
+          <span>{t('criticalPath')}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsHeatmapActive(!isHeatmapActive)}
+          className={`flex items-center space-x-1 px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
+            isHeatmapActive
+              ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm shadow-emerald-950 font-bold'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+          }`}
+          title={t('capacityHeatmap')}
+        >
+          <Activity className="w-3.5 h-3.5" />
+          <span>{t('capacityHeatmap')}</span>
+        </button>
       </div>
 
       {/* Right Group: Search, Filters, Undo/Redo & Zoom */}
@@ -283,6 +338,23 @@ export const GanttToolbar: React.FC = () => {
           >
             {t('monthView')}
           </button>
+        </div>
+
+        {/* Jump to Date Picker */}
+        <div
+          className="flex items-center space-x-1 bg-slate-900 border border-slate-700/80 rounded px-1.5 py-1 hover:border-slate-600 transition-colors"
+          title={t('jumpToDate')}
+        >
+          <Calendar className="w-3 h-3 text-slate-400 pointer-events-none shrink-0" />
+          <input
+            type="date"
+            onChange={(e) => {
+              if (e.target.value) {
+                triggerScrollToDate(new Date(e.target.value));
+              }
+            }}
+            className="bg-transparent text-slate-300 text-[11px] font-mono focus:outline-none cursor-pointer w-24"
+          />
         </div>
 
         {/* Jump to Now */}

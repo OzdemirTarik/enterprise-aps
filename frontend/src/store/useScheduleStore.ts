@@ -14,8 +14,80 @@ import {
 import { scheduleApi } from '../services/api';
 import { Language } from '../i18n/translations';
 
-interface ScheduleHistoryState {
+export interface ScheduleHistoryState {
   operations: Record<string, Operation>;
+}
+
+export function computeCriticalPath(operations: Record<string, Operation>): Set<string> {
+  const ops = Object.values(operations);
+  if (ops.length === 0) return new Set();
+
+  const criticalSet = new Set<string>();
+
+  const byWo: Record<string, Operation[]> = {};
+  ops.forEach((op) => {
+    if (!byWo[op.workOrderId]) byWo[op.workOrderId] = [];
+    byWo[op.workOrderId].push(op);
+  });
+
+  Object.values(byWo).forEach((woOps) => {
+    if (woOps.length === 0) return;
+
+    let maxEndMs = -Infinity;
+    let terminalOp: Operation | null = null;
+
+    woOps.forEach((op) => {
+      const endMs = new Date(op.plannedEndTime).getTime();
+      if (endMs > maxEndMs) {
+        maxEndMs = endMs;
+        terminalOp = op;
+      }
+    });
+
+    if (!terminalOp) return;
+
+    const visited = new Set<string>();
+    const traceBack = (current: Operation) => {
+      criticalSet.add(current.id);
+      visited.add(current.id);
+
+      const precIds = current.precedenceOperationIds || [];
+      if (precIds.length === 0) {
+        const prevOps = woOps
+          .filter((o) => o.sequenceIndex < current.sequenceIndex && !visited.has(o.id))
+          .sort(
+            (a, b) =>
+              new Date(b.plannedEndTime).getTime() - new Date(a.plannedEndTime).getTime()
+          );
+        if (prevOps.length > 0) {
+          traceBack(prevOps[0]);
+        }
+        return;
+      }
+
+      let latestPred: Operation | null = null;
+      let latestPredEnd = -Infinity;
+
+      precIds.forEach((pid) => {
+        const pred = operations[pid];
+        if (pred && !visited.has(pred.id)) {
+          const endMs = new Date(pred.plannedEndTime).getTime();
+          if (endMs > latestPredEnd) {
+            latestPredEnd = endMs;
+            latestPred = pred;
+          }
+        }
+      });
+
+      if (latestPred) {
+        traceBack(latestPred);
+      }
+    };
+
+    traceBack(terminalOp);
+  });
+
+  return criticalSet;
 }
 
 interface ScheduleStore {
@@ -61,9 +133,15 @@ interface ScheduleStore {
   isAutoScheduleOpen: boolean;
   isShortcutsOpen: boolean;
 
+  // Planning & Analytics Modes
+  isChainDragActive: boolean;
+  isCriticalPathActive: boolean;
+  isHeatmapActive: boolean;
+
   // Viewport Scroll Triggers
   scrollToNowTrigger: number;
   scrollToOperationId: string | null;
+  scrollToDateTrigger: Date | null;
 
   // History for Undo/Redo
   undoStack: ScheduleHistoryState[];
@@ -82,6 +160,10 @@ interface ScheduleStore {
   setWorkCenterCategory: (category: 'ALL' | 'SMT' | 'THT' | 'TEST' | 'COAT') => void;
   setLanguage: (lang: Language) => void;
 
+  setIsChainDragActive: (active: boolean) => void;
+  setIsCriticalPathActive: (active: boolean) => void;
+  setIsHeatmapActive: (active: boolean) => void;
+
   setContextMenu: (menu: { x: number; y: number; operationId: string } | null) => void;
   setIsCreateWorkOrderOpen: (open: boolean) => void;
   setIsResourceManagerOpen: (open: boolean) => void;
@@ -93,6 +175,7 @@ interface ScheduleStore {
   setIsShortcutsOpen: (open: boolean) => void;
   triggerScrollToNow: () => void;
   triggerScrollToOperation: (opId: string | null) => void;
+  triggerScrollToDate: (date: Date) => void;
   updateShiftPattern: (shifts: ShiftSchedule[]) => Promise<void>;
 
   // Mutations
@@ -100,6 +183,11 @@ interface ScheduleStore {
     operationId: string,
     targetResourceId: string,
     targetStartTime: Date
+  ) => Promise<void>;
+
+  rescheduleWorkOrderChain: (
+    workOrderId: string,
+    deltaMinutes: number
   ) => Promise<void>;
 
   resizeOperationOptimistic: (
@@ -186,8 +274,12 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   splitTargetOperationId: null,
   isAutoScheduleOpen: false,
   isShortcutsOpen: false,
+  isChainDragActive: false,
+  isCriticalPathActive: false,
+  isHeatmapActive: false,
   scrollToNowTrigger: 0,
   scrollToOperationId: null,
+  scrollToDateTrigger: null,
 
   undoStack: [],
   redoStack: [],
@@ -293,8 +385,12 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     set({ isSplitModalOpen: open, splitTargetOperationId: opId }),
   setIsAutoScheduleOpen: (open) => set({ isAutoScheduleOpen: open }),
   setIsShortcutsOpen: (open) => set({ isShortcutsOpen: open }),
+  setIsChainDragActive: (active) => set({ isChainDragActive: active }),
+  setIsCriticalPathActive: (active) => set({ isCriticalPathActive: active }),
+  setIsHeatmapActive: (active) => set({ isHeatmapActive: active }),
   triggerScrollToNow: () => set((s) => ({ scrollToNowTrigger: s.scrollToNowTrigger + 1 })),
   triggerScrollToOperation: (opId) => set({ scrollToOperationId: opId }),
+  triggerScrollToDate: (date) => set({ scrollToDateTrigger: date }),
 
   updateShiftPattern: async (newShifts) => {
     try {
@@ -303,6 +399,62 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     } catch (err: any) {
       console.error('Failed to update shifts pattern:', err);
       throw err;
+    }
+  },
+
+  rescheduleWorkOrderChain: async (workOrderId, deltaMinutes) => {
+    const { operations, undoStack, activeLockUser } = get();
+    const woOps = Object.values(operations).filter((o) => o.workOrderId === workOrderId);
+    if (woOps.length === 0 || deltaMinutes === 0) return;
+
+    set({
+      undoStack: [...undoStack, { operations: { ...operations } }],
+      redoStack: [],
+    });
+
+    const updatedOps = { ...operations };
+    const shiftedOps: Array<{ id: string; resourceId: string; newStart: string }> = [];
+
+    woOps.forEach((op) => {
+      const curStartMs = new Date(op.plannedStartTime).getTime();
+      const newStartMs = curStartMs + deltaMinutes * 60000;
+      const durationMs = (op.setupDurationMinutes + op.durationMinutes) * 60000;
+      const newStartStr = new Date(newStartMs).toISOString();
+      const newEndStr = new Date(newStartMs + durationMs).toISOString();
+
+      updatedOps[op.id] = {
+        ...op,
+        plannedStartTime: newStartStr,
+        plannedEndTime: newEndStr,
+      };
+
+      shiftedOps.push({
+        id: op.id,
+        resourceId: op.requiredResourceId,
+        newStart: newStartStr,
+      });
+    });
+
+    set({ operations: updatedOps });
+
+    try {
+      for (let i = 0; i < shiftedOps.length; i++) {
+        const s = shiftedOps[i];
+        const isLast = i === shiftedOps.length - 1;
+        const delta = await scheduleApi.rescheduleOperation(
+          s.id,
+          s.resourceId,
+          s.newStart,
+          isLast,
+          activeLockUser.userId
+        );
+        if (isLast && delta) {
+          get().mergeScheduleDelta(delta);
+        }
+      }
+    } catch (err) {
+      console.error('[rescheduleWorkOrderChain failed, rolling back]', err);
+      get().undo();
     }
   },
 

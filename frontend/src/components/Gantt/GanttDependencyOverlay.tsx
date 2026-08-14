@@ -1,5 +1,5 @@
 import React from 'react';
-import { useScheduleStore } from '../../store/useScheduleStore';
+import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
 import { parseISO } from 'date-fns';
 import { Operation } from '../../types/schedule';
 
@@ -18,7 +18,7 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
   const timelineEnd = useScheduleStore((state) => state.timelineEnd);
   const selectedOperationId = useScheduleStore((state) => state.selectedOperationId);
   const hoveredOperationId = useScheduleStore((state) => state.hoveredOperationId);
-
+  const isCriticalPathActive = useScheduleStore((state) => state.isCriticalPathActive);
   const workCenterCategory = useScheduleStore((state) => state.workCenterCategory);
 
   const resourceList = Object.values(resources).filter((r) => {
@@ -30,6 +30,11 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
     return true;
   });
   const opList = Object.values(operations);
+
+  const criticalSet = React.useMemo(() => {
+    if (!isCriticalPathActive) return new Set<string>();
+    return computeCriticalPath(operations);
+  }, [isCriticalPathActive, operations]);
 
   const resourceIndexMap = React.useMemo(() => {
     const map = new Map<string, number>();
@@ -52,6 +57,7 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
       d: string;
       isHighlighted: boolean;
       isViolated: boolean;
+      isCritical: boolean;
     }> = [];
 
     opList.forEach((childOp) => {
@@ -81,6 +87,7 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
           hoveredOperationId === parentOp.id;
 
         const isViolated = childStartMs < parentEndMs;
+        const isCritical = isCriticalPathActive && criticalSet.has(childOp.id) && criticalSet.has(parentOp.id);
 
         // Smooth S-curve Bézier
         const dx = Math.max(30, Math.abs(childX - parentX) * 0.5);
@@ -91,6 +98,7 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
           d,
           isHighlighted,
           isViolated,
+          isCritical,
         });
       });
     });
@@ -105,6 +113,8 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
     rowHeight,
     selectedOperationId,
     hoveredOperationId,
+    isCriticalPathActive,
+    criticalSet,
   ]);
 
   const totalMinutes = (timelineEnd.getTime() - timelineStart.getTime()) / 60000;
@@ -155,11 +165,24 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
         >
           <path d="M 0 1 L 9 5 L 0 9 z" fill="#f43f5e" />
         </marker>
+
+        {/* Critical Path Arrowhead */}
+        <marker
+          id="arrow-critical"
+          viewBox="0 0 10 10"
+          refX="6"
+          refY="5"
+          markerWidth="8"
+          markerHeight="8"
+          orient="auto-start-reverse"
+        >
+          <path d="M 0 1 L 9 5 L 0 9 z" fill="#f43f5e" />
+        </marker>
       </defs>
 
-      {/* Render non-highlighted links first */}
+      {/* Render standard non-highlighted links first */}
       {links
-        .filter((l) => !l.isHighlighted)
+        .filter((l) => !l.isHighlighted && !l.isCritical)
         .map((link) => (
           <path
             key={link.id}
@@ -173,7 +196,24 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
           />
         ))}
 
-      {/* Render highlighted links on top */}
+      {/* Render Critical Path links */}
+      {links
+        .filter((l) => l.isCritical && !l.isHighlighted)
+        .map((link) => (
+          <path
+            key={link.id}
+            d={link.d}
+            fill="none"
+            stroke="#f43f5e"
+            strokeWidth={2.6}
+            strokeDasharray="5 3"
+            opacity={1}
+            markerEnd="url(#arrow-critical)"
+            className="drop-shadow-[0_0_8px_rgba(244,63,94,0.9)] animate-pulse"
+          />
+        ))}
+
+      {/* Render user-highlighted links on top */}
       {links
         .filter((l) => l.isHighlighted)
         .map((link) => (
@@ -182,10 +222,10 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
             d={link.d}
             fill="none"
             stroke={link.isViolated ? '#f43f5e' : '#38bdf8'}
-            strokeWidth={2.5}
+            strokeWidth={2.8}
             opacity={1}
             markerEnd={link.isViolated ? 'url(#arrow-violated)' : 'url(#arrow-highlighted)'}
-            className="drop-shadow-[0_0_6px_rgba(56,189,248,0.7)]"
+            className="drop-shadow-[0_0_8px_rgba(56,189,248,0.8)]"
           />
         ))}
     </svg>

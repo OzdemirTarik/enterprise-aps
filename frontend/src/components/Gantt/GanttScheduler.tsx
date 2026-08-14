@@ -55,6 +55,7 @@ export const GanttScheduler: React.FC = () => {
 
   const scrollToNowTrigger = useScheduleStore((s) => s.scrollToNowTrigger);
   const scrollToOperationId = useScheduleStore((s) => s.scrollToOperationId);
+  const scrollToDateTrigger = useScheduleStore((s) => s.scrollToDateTrigger);
   const searchQuery = useScheduleStore((s) => s.searchQuery);
   const operations = useScheduleStore((s) => s.operations);
 
@@ -76,6 +77,19 @@ export const GanttScheduler: React.FC = () => {
       });
     }
   }, [scrollToNowTrigger, minuteWidth, timelineStart]);
+
+  // Smooth scroll to picked date
+  React.useEffect(() => {
+    if (scrollToDateTrigger && scrollContainerRef.current) {
+      const dateMs = new Date(scrollToDateTrigger).getTime();
+      const elapsedMinutes = (dateMs - timelineStart.getTime()) / 60000;
+      const targetLeft = elapsedMinutes * minuteWidth - 100;
+      scrollContainerRef.current.scrollTo({
+        left: Math.max(0, targetLeft),
+        behavior: 'smooth',
+      });
+    }
+  }, [scrollToDateTrigger, minuteWidth, timelineStart]);
 
   // Smooth scroll to targeted operation
   React.useEffect(() => {

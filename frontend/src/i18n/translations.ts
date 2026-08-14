@@ -44,6 +44,14 @@ export const translations = {
     shortcutsSearch: 'İş emri veya operasyon ara',
     shortcutsClose: 'Açık pencereyi kapat',
     shortcutsHelpTitle: 'Klavye Kısayolları & Hızlı Gezinme',
+    chainDrag: 'Zincir Taşıma',
+    chainDragHelp: 'İş emrindeki tüm operasyon adımlarını toplu olarak kaydırın (Shift basılı tutarak da yapılabilir)',
+    criticalPath: 'Kritik Yol',
+    criticalPathDesc: 'Fabrika teslimatını belirleyen en uzun bağımlılık zinciri',
+    jumpToDate: 'Tarihe Git',
+    capacityHeatmap: 'Isı Haritası',
+    machineLoad: 'Doluluk',
+    chainDraggingTooltip: 'Tüm İş Emri Birlikte Kaydırılıyor',
 
     // Categories
     allCenters: 'Tüm Merkezler (8)',
@@ -270,6 +278,14 @@ export const translations = {
     shortcutsSearch: 'Search work order or operation',
     shortcutsClose: 'Close modal or drawer',
     shortcutsHelpTitle: 'Keyboard Shortcuts & Quick Navigation',
+    chainDrag: 'Chain Drag',
+    chainDragHelp: 'Drag entire work order step chain together (or hold Shift key while dragging)',
+    criticalPath: 'Critical Path',
+    criticalPathDesc: 'Bottleneck dependency chain determining plant makespan',
+    jumpToDate: 'Jump to Date',
+    capacityHeatmap: 'Heatmap',
+    machineLoad: 'Load',
+    chainDraggingTooltip: 'Shifting Entire Work Order Chain',
 
     // Categories
     allCenters: 'All Centers (8)',
