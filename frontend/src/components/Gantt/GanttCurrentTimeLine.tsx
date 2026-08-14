@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { useScheduleStore } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
-import { differenceInMilliseconds } from 'date-fns';
+import { differenceInMilliseconds, format } from 'date-fns';
 
 interface GanttCurrentTimeLineProps {
   minuteWidth: number;
   totalHeight: number;
+  timelineStart: Date;
 }
 
 export const GanttCurrentTimeLine: React.FC<GanttCurrentTimeLineProps> = ({
   minuteWidth,
   totalHeight,
+  timelineStart,
 }) => {
   const { t } = useTranslation();
-  const timelineStart = useScheduleStore((state) => state.timelineStart);
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 30000);
+    // Live update every 10 seconds
+    const timer = setInterval(() => setNow(new Date()), 10000);
     return () => clearInterval(timer);
   }, []);
 
@@ -29,15 +30,17 @@ export const GanttCurrentTimeLine: React.FC<GanttCurrentTimeLineProps> = ({
 
   return (
     <div
-      className="absolute top-0 bottom-0 pointer-events-none z-20 flex flex-col items-center"
+      className="absolute top-0 bottom-0 pointer-events-none z-30 flex flex-col items-center -ml-[1px]"
       style={{ left: `${leftPx}px`, height: `${totalHeight}px` }}
     >
-      {/* Top indicator badge */}
-      <div className="bg-rose-500 text-white font-mono text-[9px] font-bold px-1 py-0.5 rounded-b shadow-md shadow-rose-500/50 uppercase tracking-tighter">
-        {t('nowBadge')}
+      {/* Top Indicator Badge with Live Clock & Ping Dot */}
+      <div className="bg-rose-600 text-white font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shadow-lg shadow-rose-600/60 uppercase tracking-tight flex items-center gap-1 border border-rose-400/50 whitespace-nowrap">
+        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+        <span>{t('nowBadge')} {format(now, 'HH:mm')}</span>
       </div>
-      {/* Vertical line with glow */}
-      <div className="w-[2px] h-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
+
+      {/* High-visibility Vertical Line with Neon Glow */}
+      <div className="w-[2px] h-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.9)]" />
     </div>
   );
 };

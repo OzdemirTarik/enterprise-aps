@@ -209,8 +209,9 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       (data?.locks || []).forEach((l) => (locksMap[l.resourceId] = l));
 
       const ops = Object.values(operationsMap);
-      let tStart = new Date(new Date().setHours(6, 0, 0, 0));
-      let tEnd = new Date(new Date().setDate(new Date().getDate() + 3));
+      const nowTime = Date.now();
+      let tStart = new Date(nowTime - 12 * 3600 * 1000);
+      let tEnd = new Date(nowTime + 4 * 86400 * 1000);
 
       if (ops.length > 0) {
         const starts = ops
@@ -221,8 +222,10 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
           .filter((t) => !isNaN(t));
 
         if (starts.length > 0 && ends.length > 0) {
-          tStart = new Date(Math.min(...starts) - 2 * 3600 * 1000);
-          tEnd = new Date(Math.max(...ends) + 6 * 3600 * 1000);
+          const minTime = Math.min(nowTime, ...starts);
+          const maxTime = Math.max(nowTime + 48 * 3600 * 1000, ...ends);
+          tStart = new Date(minTime - 12 * 3600 * 1000);
+          tEnd = new Date(maxTime + 24 * 3600 * 1000);
         }
       }
 

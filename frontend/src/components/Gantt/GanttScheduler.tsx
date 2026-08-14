@@ -140,7 +140,8 @@ export const GanttScheduler: React.FC = () => {
             {/* Current Real-Time Indicator Line */}
             <GanttCurrentTimeLine
               minuteWidth={minuteWidth}
-              totalHeight={resourceList.length * ROW_HEIGHT}
+              totalHeight={Math.max(resourceList.length * ROW_HEIGHT, 800)}
+              timelineStart={timelineStart}
             />
 
             {/* Work Center Resource Tracks */}
