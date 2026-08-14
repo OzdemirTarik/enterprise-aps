@@ -188,8 +188,8 @@ export const OperationDetailDrawer: React.FC = () => {
             <div className="flex items-center gap-1">
               <input
                 type="number"
-                min={15}
-                step={15}
+                min={1}
+                step={1}
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value))}
                 className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none font-mono"
@@ -204,7 +204,7 @@ export const OperationDetailDrawer: React.FC = () => {
               <input
                 type="number"
                 min={0}
-                step={5}
+                step={1}
                 value={setupDuration}
                 onChange={(e) => setSetupDuration(Number(e.target.value))}
                 className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 focus:border-cyan-500 focus:outline-none font-mono"

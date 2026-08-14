@@ -732,7 +732,7 @@ export const CreateWorkOrderModal: React.FC = () => {
                         <input
                           type="number"
                           min={0}
-                          step={5}
+                          step={1}
                           value={op.setupDurationMinutes}
                           onChange={(e) =>
                             handleOpChange(idx, 'setupDurationMinutes', Number(e.target.value))
@@ -744,8 +744,8 @@ export const CreateWorkOrderModal: React.FC = () => {
                         <span className="text-[9px] text-cyan-400 font-mono">R:</span>
                         <input
                           type="number"
-                          min={15}
-                          step={15}
+                          min={1}
+                          step={1}
                           value={op.durationMinutes}
                           onChange={(e) =>
                             handleOpChange(idx, 'durationMinutes', Number(e.target.value))
