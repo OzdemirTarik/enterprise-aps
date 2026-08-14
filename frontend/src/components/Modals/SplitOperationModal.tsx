@@ -21,8 +21,6 @@ export const SplitOperationModal: React.FC = () => {
     }
   }, [targetOp]);
 
-  if (!isOpen || !targetOp) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetOp) return;
@@ -34,6 +32,8 @@ export const SplitOperationModal: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (!isOpen || !targetOp) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none">

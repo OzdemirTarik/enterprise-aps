@@ -29,8 +29,6 @@ export const ResourceManagerModal: React.FC = () => {
   const [toType, setToType] = useState('IoT-Gateway');
   const [setupMinutes, setSetupMinutes] = useState(45);
 
-  if (!isOpen) return null;
-
   const handleCreateMachine = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !code) return;
@@ -69,6 +67,8 @@ export const ResourceManagerModal: React.FC = () => {
       alert(`Failed to update setup matrix: ${err.message}`);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none">

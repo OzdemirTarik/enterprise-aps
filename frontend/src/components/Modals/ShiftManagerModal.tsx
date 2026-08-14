@@ -21,16 +21,6 @@ export const ShiftManagerModal: React.FC = () => {
 
   const dayLabels = language === 'tr' ? DAY_LABELS_TR : DAY_LABELS_EN;
 
-  useEffect(() => {
-    if (shiftsFromStore && shiftsFromStore.length > 0) {
-      setLocalShifts(JSON.parse(JSON.stringify(shiftsFromStore)));
-    } else {
-      loadPreset('THREE_SHIFTS');
-    }
-  }, [shiftsFromStore, isOpen]);
-
-  if (!isOpen) return null;
-
   const loadPreset = (preset: 'THREE_SHIFTS' | 'TWO_SHIFTS' | 'SINGLE_SHIFT' | 'TWO_12_SHIFTS') => {
     if (preset === 'THREE_SHIFTS') {
       setLocalShifts([
@@ -127,6 +117,14 @@ export const ShiftManagerModal: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (shiftsFromStore && shiftsFromStore.length > 0) {
+      setLocalShifts(JSON.parse(JSON.stringify(shiftsFromStore)));
+    } else {
+      loadPreset('THREE_SHIFTS');
+    }
+  }, [shiftsFromStore, isOpen]);
+
   const handleAddShift = () => {
     const nextOrder = localShifts.length + 1;
     setLocalShifts([
@@ -182,6 +180,8 @@ export const ShiftManagerModal: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none">

@@ -99,8 +99,6 @@ export const CreateWorkOrderModal: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
-
   // Preset Template loader
   const loadPreset = (presetType: 'DOUBLE_SMT_THT' | 'SINGLE_SMT_WAVE' | 'NPI_FAST' | 'MEDICAL_CLASS3') => {
     if (presetType === 'DOUBLE_SMT_THT') {
@@ -224,6 +222,8 @@ export const CreateWorkOrderModal: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none">

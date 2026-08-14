@@ -18,8 +18,6 @@ export const AddDowntimeModal: React.FC = () => {
   const [isPlanned, setIsPlanned] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isOpen) return null;
-
   const loadPreset = (
     targetResourceId: string,
     presetReason: string,
@@ -57,6 +55,8 @@ export const AddDowntimeModal: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none">

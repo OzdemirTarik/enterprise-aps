@@ -14,8 +14,6 @@ export const AutoScheduleModal: React.FC = () => {
   const [strategy, setStrategy] = useState('HEURISTIC_SPT_EDD');
   const [isOptimizing, setIsOptimizing] = useState(false);
 
-  if (!isOpen) return null;
-
   const strategies = language === 'tr' ? [
     {
       id: 'HEURISTIC_SPT_EDD',
@@ -69,6 +67,8 @@ export const AutoScheduleModal: React.FC = () => {
       setIsOptimizing(false);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm select-none animate-in fade-in duration-150">
