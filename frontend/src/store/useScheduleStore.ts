@@ -182,37 +182,45 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       const downtimesMap: Record<string, ResourceDowntime> = {};
       const locksMap: Record<string, LockInfo> = {};
 
-      data.resources.forEach((r) => (resourcesMap[r.id] = r));
-      data.operations.forEach((o) => (operationsMap[o.id] = o));
-      data.workOrders.forEach((w) => (workOrdersMap[w.id] = w));
-      (data.downtimes || []).forEach((d) => (downtimesMap[d.id] = d));
-      (data.locks || []).forEach((l) => (locksMap[l.resourceId] = l));
+      (data?.resources || []).forEach((r) => (resourcesMap[r.id] = r));
+      (data?.operations || []).forEach((o) => (operationsMap[o.id] = o));
+      (data?.workOrders || []).forEach((w) => (workOrdersMap[w.id] = w));
+      (data?.downtimes || []).forEach((d) => (downtimesMap[d.id] = d));
+      (data?.locks || []).forEach((l) => (locksMap[l.resourceId] = l));
 
       const ops = Object.values(operationsMap);
       let tStart = new Date(new Date().setHours(6, 0, 0, 0));
       let tEnd = new Date(new Date().setDate(new Date().getDate() + 3));
 
       if (ops.length > 0) {
-        const starts = ops.map((o) => new Date(o.plannedStartTime).getTime());
-        const ends = ops.map((o) => new Date(o.plannedEndTime).getTime());
-        tStart = new Date(Math.min(...starts) - 2 * 3600 * 1000);
-        tEnd = new Date(Math.max(...ends) + 6 * 3600 * 1000);
+        const starts = ops
+          .map((o) => new Date(o.plannedStartTime).getTime())
+          .filter((t) => !isNaN(t));
+        const ends = ops
+          .map((o) => new Date(o.plannedEndTime).getTime())
+          .filter((t) => !isNaN(t));
+
+        if (starts.length > 0 && ends.length > 0) {
+          tStart = new Date(Math.min(...starts) - 2 * 3600 * 1000);
+          tEnd = new Date(Math.max(...ends) + 6 * 3600 * 1000);
+        }
       }
 
       set({
         resources: resourcesMap,
         operations: operationsMap,
         workOrders: workOrdersMap,
-        setupMatrices: data.setupMatrices || [],
+        setupMatrices: data?.setupMatrices || [],
         downtimes: downtimesMap,
-        shifts: data.shifts || [],
+        shifts: data?.shifts || [],
         locks: locksMap,
-        kpis: data.kpis,
+        kpis: data?.kpis || null,
         timelineStart: tStart,
         timelineEnd: tEnd,
         isLoading: false,
       });
     } catch (err: any) {
+      console.error('[fetchSchedule Error]', err);
       set({ error: err.message || 'Failed to fetch schedule', isLoading: false });
     }
   },

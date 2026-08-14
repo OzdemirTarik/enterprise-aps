@@ -67,8 +67,11 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarSc
         {resourceList.map((resource) => {
           const lock = locks[resource.id];
           const isLockedByMe = lock?.lockedByUserId === activeLockUser.userId;
-          const isLockedByOther = lock && !isLockedByMe;
-          const utilPercent = kpis?.resourceUtilization[resource.id] ?? 0;
+          const isLockedByOther = !!lock && !isLockedByMe;
+          const utilPercent =
+            kpis?.resourceUtilization?.[resource.id] ??
+            (kpis as any)?.ResourceUtilization?.[resource.id] ??
+            0;
 
           return (
             <div
