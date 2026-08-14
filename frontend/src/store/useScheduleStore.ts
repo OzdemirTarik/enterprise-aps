@@ -17,11 +17,12 @@ import { Language } from '../i18n/translations';
 import {
   computeCriticalPath,
   computeResourceHeatmap,
+  isResourceMatchingCategory,
   CriticalPathResult,
   HeatmapBin,
 } from '../utils/analytics';
 
-export { computeCriticalPath, computeResourceHeatmap };
+export { computeCriticalPath, computeResourceHeatmap, isResourceMatchingCategory };
 export type { CriticalPathResult, HeatmapBin };
 
 export interface ScheduleHistoryState {

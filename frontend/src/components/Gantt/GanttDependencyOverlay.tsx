@@ -1,5 +1,5 @@
 import React from 'react';
-import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
+import { useScheduleStore, computeCriticalPath, isResourceMatchingCategory } from '../../store/useScheduleStore';
 import { parseISO } from 'date-fns';
 import { Operation } from '../../types/schedule';
 
@@ -22,14 +22,9 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
   const isCriticalPathActive = useScheduleStore((state) => state.isCriticalPathActive);
   const workCenterCategory = useScheduleStore((state) => state.workCenterCategory);
 
-  const resourceList = Object.values(resources).filter((r) => {
-    if (workCenterCategory === 'ALL') return true;
-    if (workCenterCategory === 'SMT') return r.id.startsWith('SMT');
-    if (workCenterCategory === 'THT') return r.id.startsWith('THT');
-    if (workCenterCategory === 'TEST') return r.id.startsWith('ICT') || r.id.startsWith('FCT');
-    if (workCenterCategory === 'COAT') return r.id.startsWith('COAT') || r.id.startsWith('DEPANEL');
-    return true;
-  });
+  const resourceList = Object.values(resources).filter((r) =>
+    isResourceMatchingCategory(r, workCenterCategory)
+  );
   const opList = Object.values(operations);
 
   const criticalResult = React.useMemo(() => {

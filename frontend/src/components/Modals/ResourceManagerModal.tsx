@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useScheduleStore } from '../../store/useScheduleStore';
+import { useScheduleStore, isResourceMatchingCategory } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import { scheduleApi } from '../../services/api';
 import {
@@ -95,14 +95,15 @@ export const ResourceManagerModal: React.FC = () => {
   // Filtered Resources
   const filteredResources = useMemo(() => {
     return resourceList.filter((r) => {
-      if (centerCategory === 'SMT' && !r.id.startsWith('SMT') && r.type !== 'SmtLine') return false;
-      if (centerCategory === 'THT' && !r.id.startsWith('THT') && !r.type.includes('Tht')) return false;
-      if (centerCategory === 'TEST' && !r.id.startsWith('ICT') && !r.id.startsWith('FCT') && !r.type.includes('Test')) return false;
-      if (centerCategory === 'COAT' && !r.id.startsWith('COAT') && !r.id.startsWith('DEPANEL')) return false;
+      if (!isResourceMatchingCategory(r, centerCategory)) return false;
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        return r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q) || r.type.toLowerCase().includes(q);
+        return (
+          r.name.toLowerCase().includes(q) ||
+          r.code.toLowerCase().includes(q) ||
+          r.type.toLowerCase().includes(q)
+        );
       }
       return true;
     });

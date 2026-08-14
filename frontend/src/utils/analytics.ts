@@ -1,4 +1,4 @@
-import { Operation, ResourceDowntime, WorkOrder } from '../types/schedule';
+import { Operation, ResourceDowntime, WorkOrder, Resource } from '../types/schedule';
 
 export interface CriticalPathResult {
   criticalOperationIds: Set<string>;
@@ -198,3 +198,114 @@ export function computeResourceHeatmap(
 
   return bins;
 }
+
+/**
+ * Dynamically filters resources by work center category.
+ * Matches code, name, id, and equipment class type intelligently so custom machines (like X-Ray, AOI, SPI, etc.) are properly categorized.
+ */
+export function isResourceMatchingCategory(
+  r: Resource,
+  category: 'ALL' | 'SMT' | 'THT' | 'TEST' | 'COAT'
+): boolean {
+  if (!r) return false;
+  if (category === 'ALL') return true;
+
+  const id = (r.id || '').toUpperCase();
+  const code = (r.code || '').toUpperCase();
+  const name = (r.name || '').toUpperCase();
+  const type = (r.type || '').toUpperCase();
+
+  if (category === 'SMT') {
+    return (
+      id.startsWith('SMT') ||
+      code.startsWith('SMT') ||
+      type.includes('SMT') ||
+      name.includes('SMT') ||
+      name.includes('PICK') ||
+      name.includes('CHIP') ||
+      name.includes('REFLOW') ||
+      name.includes('DIZGI') ||
+      name.includes('DİZGİ')
+    );
+  }
+
+  if (category === 'THT') {
+    return (
+      id.startsWith('THT') ||
+      code.startsWith('THT') ||
+      type.includes('THT') ||
+      type.includes('WAVE') ||
+      type.includes('SELECTIVE') ||
+      name.includes('THT') ||
+      name.includes('WAVE') ||
+      name.includes('DALGA') ||
+      name.includes('SELEKTIF') ||
+      name.includes('SELEKTİF') ||
+      name.includes('LEHİM') ||
+      name.includes('LEHIM')
+    );
+  }
+
+  if (category === 'TEST') {
+    return (
+      id.startsWith('ICT') ||
+      id.startsWith('FCT') ||
+      id.startsWith('XRAY') ||
+      id.startsWith('X-RAY') ||
+      id.startsWith('AOI') ||
+      id.startsWith('SPI') ||
+      id.startsWith('TEST') ||
+      code.startsWith('ICT') ||
+      code.startsWith('FCT') ||
+      code.startsWith('XRAY') ||
+      code.startsWith('X-RAY') ||
+      code.startsWith('AOI') ||
+      code.startsWith('SPI') ||
+      code.startsWith('TEST') ||
+      type.includes('TEST') ||
+      type.includes('INSPECTION') ||
+      type.includes('CIRCUIT') ||
+      type.includes('FUNCTIONAL') ||
+      name.includes('TEST') ||
+      name.includes('MUAYENE') ||
+      name.includes('X-RAY') ||
+      name.includes('XRAY') ||
+      name.includes('AOI') ||
+      name.includes('SPI') ||
+      name.includes('SPEA') ||
+      name.includes('BED-OF-NAILS') ||
+      name.includes('KONTROL')
+    );
+  }
+
+  if (category === 'COAT') {
+    return (
+      id.startsWith('COAT') ||
+      id.startsWith('DEPANEL') ||
+      id.startsWith('ROUTER') ||
+      id.startsWith('CNC') ||
+      code.startsWith('COAT') ||
+      code.startsWith('DEPANEL') ||
+      code.startsWith('ROUTER') ||
+      code.startsWith('CNC') ||
+      type.includes('COATING') ||
+      type.includes('DEPANEL') ||
+      type.includes('ROUTER') ||
+      type.includes('MANUAL') ||
+      name.includes('KAPLAMA') ||
+      name.includes('COAT') ||
+      name.includes('NEM') ||
+      name.includes('VERNİK') ||
+      name.includes('VERNIK') ||
+      name.includes('ROUTER') ||
+      name.includes('KESİM') ||
+      name.includes('KESIM') ||
+      name.includes('DEPANEL') ||
+      name.includes('CNC') ||
+      name.includes('MONTAJ')
+    );
+  }
+
+  return true;
+}
+

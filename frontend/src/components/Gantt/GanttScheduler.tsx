@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { useScheduleStore } from '../../store/useScheduleStore';
+import { useScheduleStore, isResourceMatchingCategory } from '../../store/useScheduleStore';
 import { isValid, startOfDay } from 'date-fns';
 import { GanttTimelineRuler } from './GanttTimelineRuler';
 import { GanttSidebar } from './GanttSidebar';
@@ -44,14 +44,9 @@ export const GanttScheduler: React.FC = () => {
   const totalMinutes = Math.max(1440, (timelineEnd.getTime() - timelineStart.getTime()) / 60000);
   const canvasWidth = Math.max(1200, totalMinutes * minuteWidth);
 
-  const resourceList = Object.values(resources).filter((r) => {
-    if (workCenterCategory === 'ALL') return true;
-    if (workCenterCategory === 'SMT') return r.id.startsWith('SMT');
-    if (workCenterCategory === 'THT') return r.id.startsWith('THT');
-    if (workCenterCategory === 'TEST') return r.id.startsWith('ICT') || r.id.startsWith('FCT');
-    if (workCenterCategory === 'COAT') return r.id.startsWith('COAT') || r.id.startsWith('DEPANEL');
-    return true;
-  });
+  const resourceList = Object.values(resources).filter((r) =>
+    isResourceMatchingCategory(r, workCenterCategory)
+  );
 
   const scrollToNowTrigger = useScheduleStore((s) => s.scrollToNowTrigger);
   const scrollToOperationId = useScheduleStore((s) => s.scrollToOperationId);

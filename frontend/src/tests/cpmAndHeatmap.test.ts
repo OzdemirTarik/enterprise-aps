@@ -1,4 +1,4 @@
-import { computeCriticalPath, computeResourceHeatmap } from '../utils/analytics';
+import { computeCriticalPath, computeResourceHeatmap, isResourceMatchingCategory } from '../utils/analytics';
 import { Operation, ResourceDowntime } from '../types/schedule';
 
 function runTests() {
@@ -156,7 +156,45 @@ function runTests() {
   }
   console.log('✅ Heatmap Test Scenario 2 PASSED.');
 
-  console.log('\nALL ANALYTICS UNIT TESTS PASSED!');
+  console.log('\n=== TEST SCENARIO 3: Dynamic Category Filtering with Custom User Machines (X-Ray, AOI, etc.) ===');
+  const sampleResources: any[] = [
+    { id: 'SMT-LINE-01', code: 'SMT-01', name: 'Panasonic NPM-D3 SMT Line', type: 'SmtLine' },
+    { id: 'THT-WAVE-01', code: 'WAVE-01', name: 'Ersa Powerflow Wave Solder', type: 'ThtWaveSoldering' },
+    { id: 'ICT-SPEA-01', code: 'SPEA-01', name: 'SPEA 4060 Flying Probe', type: 'InCircuitTesting' },
+    { id: 'XRAY-01', code: 'XRAY-01', name: 'Nordson Dage 3D X-Ray Inspection', type: 'FunctionalTesting' },
+    { id: 'AOI-01', code: 'AOI-01', name: 'Koh Young 3D AOI Muayene', type: 'Inspection' },
+    { id: 'ROUTER-01', code: 'ROUTER-01', name: 'ASYS Depaneling Router Kesim', type: 'DepanelingRouter' },
+    { id: 'COAT-01', code: 'COAT-01', name: 'Nordson Asymtek Konformal Kaplama', type: 'ConformalCoating' },
+  ];
+
+  const smtFiltered = sampleResources.filter(r => isResourceMatchingCategory(r, 'SMT'));
+  const thtFiltered = sampleResources.filter(r => isResourceMatchingCategory(r, 'THT'));
+  const testFiltered = sampleResources.filter(r => isResourceMatchingCategory(r, 'TEST'));
+  const coatFiltered = sampleResources.filter(r => isResourceMatchingCategory(r, 'COAT'));
+
+  if (smtFiltered.length !== 1) {
+    throw new Error(`FAILED: Expected 1 SMT resource, got ${smtFiltered.length}`);
+  }
+  if (thtFiltered.length !== 1) {
+    throw new Error(`FAILED: Expected 1 THT resource, got ${thtFiltered.length}`);
+  }
+
+  console.log('TEST Category Matches:', testFiltered.map(r => r.name));
+  if (testFiltered.length !== 3) { // ICT, X-Ray, AOI
+    throw new Error(`FAILED: Expected 3 test/inspection resources (ICT, X-Ray, AOI), got ${testFiltered.length}`);
+  }
+  if (!testFiltered.some(r => r.name.includes('X-Ray'))) {
+    throw new Error('FAILED: X-Ray test station was not matched under TEST category!');
+  }
+  if (!testFiltered.some(r => r.name.includes('AOI'))) {
+    throw new Error('FAILED: AOI Muayene was not matched under TEST category!');
+  }
+  if (coatFiltered.length !== 2) { // ROUTER, COAT
+    throw new Error(`FAILED: Expected 2 coat/router resources, got ${coatFiltered.length}`);
+  }
+  console.log('✅ Dynamic Resource Category Filtering Test Scenario 3 PASSED.');
+
+  console.log('\nALL ANALYTICS & CATEGORY UNIT TESTS PASSED!');
 }
 
 runTests();

@@ -1,8 +1,9 @@
 import React from 'react';
-import { useScheduleStore } from '../../store/useScheduleStore';
+import { useScheduleStore, isResourceMatchingCategory } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import { scheduleApi } from '../../services/api';
 import { Lock, Unlock, HardDrive, Cpu, Layers, Activity, ShieldAlert } from 'lucide-react';
+import { Resource } from '../../types/schedule';
 
 interface GanttSidebarProps {
   rowHeight: number;
@@ -18,14 +19,9 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarSc
   const workCenterCategory = useScheduleStore((state) => state.workCenterCategory);
   const isHeatmapActive = useScheduleStore((state) => state.isHeatmapActive);
 
-  const resourceList = Object.values(resources).filter((r) => {
-    if (workCenterCategory === 'ALL') return true;
-    if (workCenterCategory === 'SMT') return r.id.startsWith('SMT');
-    if (workCenterCategory === 'THT') return r.id.startsWith('THT');
-    if (workCenterCategory === 'TEST') return r.id.startsWith('ICT') || r.id.startsWith('FCT');
-    if (workCenterCategory === 'COAT') return r.id.startsWith('COAT') || r.id.startsWith('DEPANEL');
-    return true;
-  });
+  const resourceList = Object.values(resources).filter((r) =>
+    isResourceMatchingCategory(r, workCenterCategory)
+  );
 
   const toggleLock = async (resourceId: string) => {
     const existing = locks[resourceId];
@@ -36,16 +32,15 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarSc
         resourceId,
         activeLockUser.userId,
         activeLockUser.userName,
-        activeLockUser.userColor
+        activeLockUser.userColor || '#06b6d4'
       );
     }
   };
 
-  const getCategoryIcon = (id: string) => {
-    if (id.startsWith('SMT')) return <Cpu className="w-3.5 h-3.5 text-cyan-400 shrink-0" />;
-    if (id.startsWith('THT')) return <Layers className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
-    if (id.startsWith('ICT') || id.startsWith('FCT'))
-      return <Activity className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+  const getCategoryIcon = (r: Resource) => {
+    if (isResourceMatchingCategory(r, 'SMT')) return <Cpu className="w-3.5 h-3.5 text-cyan-400 shrink-0" />;
+    if (isResourceMatchingCategory(r, 'THT')) return <Layers className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+    if (isResourceMatchingCategory(r, 'TEST')) return <Activity className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
     return <ShieldAlert className="w-3.5 h-3.5 text-pink-400 shrink-0" />;
   };
 
@@ -93,7 +88,7 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarSc
               {/* Line 1: Machine info & Lock status */}
               <div className="flex items-center justify-between leading-none">
                 <div className="flex items-center space-x-2 overflow-hidden">
-                  {getCategoryIcon(resource.id)}
+                  {getCategoryIcon(resource)}
                   <div className="truncate">
                     <div className="flex items-center space-x-1.5">
                       <span className="text-xs font-bold font-mono text-slate-200">
