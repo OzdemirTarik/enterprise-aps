@@ -624,11 +624,12 @@ export const ResourceManagerModal: React.FC = () => {
                                   <span>{t('editCenter')}: {r.code}</span>
                                   <span className="text-[10px] text-slate-400 font-mono">ID: {r.id}</span>
                                 </div>
-                                <div className="grid grid-cols-6 gap-2">
+                                <div className="grid grid-cols-7 gap-2 font-sans">
                                   <div className="col-span-2">
                                     <label className="text-[10px] text-slate-400 block mb-0.5">{t('centerName')}</label>
                                     <input
                                       type="text"
+                                      required
                                       value={editName}
                                       onChange={(e) => setEditName(e.target.value)}
                                       className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs focus:border-cyan-500"
@@ -638,15 +639,35 @@ export const ResourceManagerModal: React.FC = () => {
                                     <label className="text-[10px] text-slate-400 block mb-0.5">{t('centerCode')}</label>
                                     <input
                                       type="text"
+                                      required
                                       value={editCode}
                                       onChange={(e) => setEditCode(e.target.value)}
                                       className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs font-mono focus:border-cyan-500"
                                     />
                                   </div>
                                   <div>
+                                    <label className="text-[10px] text-slate-400 block mb-0.5">{t('equipmentClass')}</label>
+                                    <select
+                                      value={editType}
+                                      onChange={(e) => setEditType(e.target.value)}
+                                      className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs focus:border-cyan-500"
+                                    >
+                                      <option value="SmtLine">SMT Line (Dizgi & Reflow)</option>
+                                      <option value="ThtWaveSoldering">THT Dalga Lehim (Wave)</option>
+                                      <option value="ThtSelectiveSoldering">THT Selektif Lehim</option>
+                                      <option value="InCircuitTesting">ICT Test (Bed-of-Nails)</option>
+                                      <option value="FunctionalTesting">FCT Test & Flash</option>
+                                      <option value="ConformalCoating">Konformal Nem Kaplama</option>
+                                      <option value="DepanelingRouter">CNC Depaneling Router</option>
+                                      <option value="ManualAssembly">Manuel Montaj & Box-Build</option>
+                                    </select>
+                                  </div>
+                                  <div>
                                     <label className="text-[10px] text-slate-400 block mb-0.5">{t('tableHours')}</label>
                                     <input
                                       type="number"
+                                      min={1}
+                                      max={24}
                                       value={editHours}
                                       onChange={(e) => setEditHours(Number(e.target.value))}
                                       className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs font-mono"
@@ -656,6 +677,7 @@ export const ResourceManagerModal: React.FC = () => {
                                     <label className="text-[10px] text-slate-400 block mb-0.5">{t('hourlyRate')}</label>
                                     <input
                                       type="number"
+                                      min={0}
                                       value={editRate}
                                       onChange={(e) => setEditRate(Number(e.target.value))}
                                       className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs font-mono"
@@ -667,6 +689,7 @@ export const ResourceManagerModal: React.FC = () => {
                                       value={editColor}
                                       onChange={(e) => setEditColor(e.target.value)}
                                       className="w-6 h-6 bg-transparent border-0 cursor-pointer"
+                                      title="İstasyon Rengi"
                                     />
                                     <label className="flex items-center gap-1 text-[11px] text-slate-300">
                                       <input
