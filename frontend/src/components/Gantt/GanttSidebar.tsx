@@ -6,9 +6,10 @@ import { Lock, Unlock, HardDrive, Cpu, Layers, Activity, ShieldAlert } from 'luc
 
 interface GanttSidebarProps {
   rowHeight: number;
+  sidebarScrollRef?: React.RefObject<HTMLDivElement>;
 }
 
-export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
+export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarScrollRef }) => {
   const { t } = useTranslation();
   const resources = useScheduleStore((state) => state.resources);
   const locks = useScheduleStore((state) => state.locks);
@@ -48,9 +49,9 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
   };
 
   return (
-    <div className="w-72 flex-shrink-0 bg-[#0f172a] border-r border-slate-800 z-20 flex flex-col select-none">
-      {/* Sidebar Header */}
-      <div className="h-14 bg-[#141e33] border-b border-slate-800 px-4 flex items-center justify-between text-xs font-semibold text-slate-300">
+    <div className="w-72 flex-shrink-0 bg-[#0f172a] border-r border-slate-800 z-20 flex flex-col select-none h-full">
+      {/* Sidebar Header (Fixed at top, matches 56px Timeline Ruler) */}
+      <div className="h-14 min-h-[56px] max-h-[56px] bg-[#141e33] border-b border-slate-800 px-4 flex items-center justify-between text-xs font-semibold text-slate-300 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <HardDrive className="w-4 h-4 text-cyan-400" />
           <span className="uppercase tracking-wider">{t('workCenters')} ({resourceList.length})</span>
@@ -58,8 +59,11 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
         <span className="text-[10px] text-slate-400 uppercase font-mono">{t('utilization')}</span>
       </div>
 
-      {/* Resource Rows */}
-      <div className="divide-y divide-slate-800/60">
+      {/* Resource Rows Container with Synchronized Scroll */}
+      <div
+        ref={sidebarScrollRef}
+        className="flex-1 overflow-hidden divide-y divide-slate-800/60"
+      >
         {resourceList.map((resource) => {
           const lock = locks[resource.id];
           const isLockedByMe = lock?.lockedByUserId === activeLockUser.userId;
@@ -69,17 +73,21 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
           return (
             <div
               key={resource.id}
-              className={`px-3.5 flex flex-col justify-center relative transition-colors ${
+              className={`px-3.5 flex flex-col justify-center relative transition-colors box-border overflow-hidden ${
                 isLockedByOther
                   ? 'bg-rose-950/20 border-l-4 border-rose-500'
                   : isLockedByMe
                   ? 'bg-cyan-950/20 border-l-4 border-cyan-500'
                   : 'hover:bg-slate-800/40 border-l-4 border-transparent'
               }`}
-              style={{ height: `${rowHeight}px` }}
+              style={{
+                height: `${rowHeight}px`,
+                minHeight: `${rowHeight}px`,
+                maxHeight: `${rowHeight}px`,
+              }}
             >
-              <div className="flex items-center justify-between">
-                {/* Resource Code & Name */}
+              {/* Line 1: Machine info & Lock status */}
+              <div className="flex items-center justify-between leading-none">
                 <div className="flex items-center space-x-2 overflow-hidden">
                   {getCategoryIcon(resource.id)}
                   <div className="truncate">
@@ -92,7 +100,7 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
                       </span>
                     </div>
                     <div
-                      className="text-[11px] text-slate-400 truncate max-w-[130px]"
+                      className="text-[11px] text-slate-400 truncate max-w-[130px] mt-0.5"
                       title={resource.name}
                     >
                       {resource.name}
@@ -101,10 +109,10 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
                 </div>
 
                 {/* Lock Action Button & Badge */}
-                <div className="flex items-center space-x-1.5 flex-shrink-0">
+                <div className="flex items-center space-x-1 flex-shrink-0 ml-1">
                   {lock && (
                     <span
-                      className={`text-[9px] font-mono px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                      className={`text-[9px] font-mono px-1 py-0.5 rounded flex items-center gap-0.5 ${
                         isLockedByMe
                           ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                           : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
@@ -131,19 +139,19 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
                     }
                   >
                     {isLockedByMe ? (
-                      <Lock className="w-3.5 h-3.5 text-cyan-400" />
+                      <Lock className="w-3 h-3 text-cyan-400" />
                     ) : isLockedByOther ? (
-                      <Lock className="w-3.5 h-3.5 text-rose-400" />
+                      <Lock className="w-3 h-3 text-rose-400" />
                     ) : (
-                      <Unlock className="w-3.5 h-3.5 text-slate-500" />
+                      <Unlock className="w-3 h-3 text-slate-500" />
                     )}
                   </button>
                 </div>
               </div>
 
-              {/* Real-Time Utilization Progress Bar */}
-              <div className="mt-1.5 flex items-center space-x-2">
-                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              {/* Line 2: Real-Time Utilization Progress Bar */}
+              <div className="mt-1 flex items-center space-x-2">
+                <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       utilPercent > 80
@@ -155,7 +163,7 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight }) => {
                     style={{ width: `${utilPercent}%` }}
                   />
                 </div>
-                <span className="text-[10px] font-mono text-slate-400 flex-shrink-0 w-8 text-right">
+                <span className="text-[10px] font-mono text-slate-400 flex-shrink-0 w-7 text-right">
                   {utilPercent}%
                 </span>
               </div>

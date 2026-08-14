@@ -7,7 +7,7 @@ import { GanttDependencyOverlay } from './GanttDependencyOverlay';
 import { GanttCurrentTimeLine } from './GanttCurrentTimeLine';
 import { GanttContextMenu } from './GanttContextMenu';
 
-const ROW_HEIGHT = 44;
+const ROW_HEIGHT = 56;
 
 export const GanttScheduler: React.FC = () => {
   const resources = useScheduleStore((s) => s.resources);
@@ -18,6 +18,7 @@ export const GanttScheduler: React.FC = () => {
   const workCenterCategory = useScheduleStore((s) => s.workCenterCategory);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
   // Zoom scale: pixel width per minute
   const minuteWidth = zoomLevel === 'hour' ? 4.0 : zoomLevel === 'day' ? 1.4 : 0.4;
@@ -34,17 +35,24 @@ export const GanttScheduler: React.FC = () => {
     return true;
   });
 
+  const handleTimelineScroll = () => {
+    if (scrollContainerRef.current && sidebarScrollRef.current) {
+      sidebarScrollRef.current.scrollTop = scrollContainerRef.current.scrollTop;
+    }
+  };
+
   return (
     <div
       onClick={() => setSelectedOperationId(null)}
       className="flex-1 flex overflow-hidden relative bg-[#090d16]"
     >
       {/* Fixed Left Sidebar with Resource/Machine Info & Locks */}
-      <GanttSidebar rowHeight={ROW_HEIGHT} />
+      <GanttSidebar rowHeight={ROW_HEIGHT} sidebarScrollRef={sidebarScrollRef} />
 
       {/* Scrollable Gantt Timeline Area */}
       <div
         ref={scrollContainerRef}
+        onScroll={handleTimelineScroll}
         className="flex-1 overflow-auto relative custom-scrollbar select-none"
       >
         <div style={{ width: `${canvasWidth}px` }} className="relative min-h-full">
