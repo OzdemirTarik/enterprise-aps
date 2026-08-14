@@ -74,6 +74,15 @@ public class ResourcesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPut("downtimes/{id}")]
+    public async Task<ActionResult<ResourceDowntimeDto>> UpdateDowntime(string id, [FromBody] UpdateResourceDowntimeCommand command)
+    {
+        if (id != command.Id) return BadRequest("ID mismatch");
+        var result = await _mediator.Send(command);
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
     [HttpDelete("downtimes/{id}")]
     public async Task<ActionResult<bool>> DeleteDowntime(string id)
     {

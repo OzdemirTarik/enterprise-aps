@@ -193,6 +193,10 @@ export const translations = {
     // Maintenance / Downtime Modal
     maintenanceTitle: 'EMS Hat Bakımı Planla',
     maintenanceDesc: 'SMT/THT bakım aralığı belirleyin. Çakışan işler otomatik olarak ileri kaydırılır.',
+    editDowntime: 'Bakım Kaydını Düzenle',
+    downtimeUpdatedSuccess: 'Bakım kaydı başarıyla güncellendi!',
+    downtimeDeletedSuccess: 'Bakım kaydı silindi.',
+    deleteDowntimeConfirm: 'Bu bakım kaydını silmek istediğinize emin misiniz?',
     maintenancePresets: 'EMS Bakım Hızlı Şablonları:',
     tmplSqueegeeWipe: 'SMT Şablon Otomatik Silme',
     tmplSqueegeeWipeDesc: 'SMT-LINE-01 (2 saat sonra 15 dk)',
@@ -469,6 +473,10 @@ export const translations = {
     // Maintenance / Downtime Modal
     maintenanceTitle: 'Schedule EMS Line Maintenance',
     maintenanceDesc: 'Reserve an SMT/THT maintenance block. Overlapping jobs automatically shift forward.',
+    editDowntime: 'Edit Maintenance Record',
+    downtimeUpdatedSuccess: 'Maintenance record updated successfully!',
+    downtimeDeletedSuccess: 'Maintenance record deleted.',
+    deleteDowntimeConfirm: 'Are you sure you want to delete this maintenance record?',
     maintenancePresets: 'EMS Maintenance Quick Presets:',
     tmplSqueegeeWipe: 'SMT Stencil Auto-Wipe',
     tmplSqueegeeWipeDesc: 'SMT-LINE-01 (15m in 2h)',

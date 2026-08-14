@@ -221,6 +221,21 @@ export const scheduleApi = {
       body: JSON.stringify(data),
     }),
 
+  updateDowntime: (
+    id: string,
+    data: {
+      resourceId: string;
+      reason: string;
+      startTime: string;
+      endTime: string;
+      isPlanned?: boolean;
+    }
+  ): Promise<ResourceDowntime> =>
+    request<ResourceDowntime>(`/resources/downtimes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ id, ...data }),
+    }),
+
   deleteDowntime: (id: string): Promise<{ success: boolean }> =>
     request<{ success: boolean }>(`/resources/downtimes/${id}`, {
       method: 'DELETE',

@@ -154,6 +154,16 @@ interface ScheduleStore {
     }
   ) => Promise<void>;
   deleteResource: (resourceId: string) => Promise<void>;
+  updateDowntime: (
+    id: string,
+    data: {
+      resourceId: string;
+      reason: string;
+      startTime: string;
+      endTime: string;
+      isPlanned?: boolean;
+    }
+  ) => Promise<void>;
   deleteDowntime: (downtimeId: string) => Promise<void>;
 
   // SignalR Sync Handlers
@@ -545,6 +555,17 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       set({ resources: updatedRes });
     } catch (err: any) {
       set({ error: err.message || 'Failed to delete resource' });
+    }
+  },
+
+  updateDowntime: async (id, data) => {
+    try {
+      const updated = await scheduleApi.updateDowntime(id, data);
+      const dtMap = { ...get().downtimes, [id]: updated };
+      set({ downtimes: dtMap });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to update downtime' });
+      throw err;
     }
   },
 

@@ -16,7 +16,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { format, isValid } from 'date-fns';
-import { Resource, SetupMatrixItem } from '../../types/schedule';
+import { Resource, SetupMatrixItem, ResourceDowntime } from '../../types/schedule';
 
 export const ResourceManagerModal: React.FC = () => {
   const { t, language } = useTranslation();
@@ -28,6 +28,8 @@ export const ResourceManagerModal: React.FC = () => {
   const downtimes = useScheduleStore((s) => s.downtimes);
   const deleteResource = useScheduleStore((s) => s.deleteResource);
   const updateResource = useScheduleStore((s) => s.updateResource);
+  const deleteDowntime = useScheduleStore((s) => s.deleteDowntime);
+  const updateDowntime = useScheduleStore((s) => s.updateDowntime);
   const setIsAddDowntimeOpen = useScheduleStore((s) => s.setIsAddDowntimeOpen);
   const fetchSchedule = useScheduleStore((s) => s.fetchSchedule);
 
@@ -38,6 +40,15 @@ export const ResourceManagerModal: React.FC = () => {
   const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Edit Downtime Form State
+  const [editingDowntimeId, setEditingDowntimeId] = useState<string | null>(null);
+  const [editDtResourceId, setEditDtResourceId] = useState('');
+  const [editDtReason, setEditDtReason] = useState('');
+  const [editDtStartTime, setEditDtStartTime] = useState('');
+  const [editDtEndTime, setEditDtEndTime] = useState('');
+  const [editDtIsPlanned, setEditDtIsPlanned] = useState(true);
+  const [confirmDeleteDtId, setConfirmDeleteDtId] = useState<string | null>(null);
 
   // New Work Center Form State
   const [newName, setNewName] = useState('');
@@ -228,6 +239,53 @@ export const ResourceManagerModal: React.FC = () => {
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
       alert(`Failed to reset rule: ${err.message}`);
+    }
+  };
+
+  // Downtime Actions
+  const handleStartEditDowntime = (dt: ResourceDowntime) => {
+    setEditingDowntimeId(dt.id);
+    setEditDtResourceId(dt.resourceId);
+    setEditDtReason(dt.reason);
+    setEditDtStartTime(
+      isValid(new Date(dt.startTime)) ? format(new Date(dt.startTime), "yyyy-MM-dd'T'HH:mm") : ''
+    );
+    setEditDtEndTime(
+      isValid(new Date(dt.endTime)) ? format(new Date(dt.endTime), "yyyy-MM-dd'T'HH:mm") : ''
+    );
+    setEditDtIsPlanned(dt.isPlanned ?? true);
+  };
+
+  const handleSaveEditDowntime = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDowntimeId || !editDtResourceId || !editDtStartTime || !editDtEndTime) return;
+
+    try {
+      await updateDowntime(editingDowntimeId, {
+        resourceId: editDtResourceId,
+        reason: editDtReason,
+        startTime: new Date(editDtStartTime).toISOString(),
+        endTime: new Date(editDtEndTime).toISOString(),
+        isPlanned: editDtIsPlanned,
+      });
+      await fetchSchedule();
+      setEditingDowntimeId(null);
+      setSuccessMsg(t('downtimeUpdatedSuccess'));
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(`Failed to update downtime: ${err.message}`);
+    }
+  };
+
+  const handleDeleteDowntime = async (dtId: string) => {
+    try {
+      await deleteDowntime(dtId);
+      await fetchSchedule();
+      setConfirmDeleteDtId(null);
+      setSuccessMsg(t('downtimeDeletedSuccess'));
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(`Failed to delete downtime: ${err.message}`);
     }
   };
 
@@ -1058,7 +1116,7 @@ export const ResourceManagerModal: React.FC = () => {
               </div>
 
               {/* Maintenance Windows List */}
-              <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60">
+              <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/60 shadow-sm">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 text-[11px] font-semibold">
                     <tr>
@@ -1068,12 +1126,13 @@ export const ResourceManagerModal: React.FC = () => {
                       <th className="p-2.5">Bitiş</th>
                       <th className="p-2.5">Süre</th>
                       <th className="p-2.5">Tip</th>
+                      <th className="p-2.5 text-right">{t('tableActions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 font-mono">
                     {downtimeList.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-slate-500 font-sans">
+                        <td colSpan={7} className="p-8 text-center text-slate-500 font-sans">
                           Aktif bakım penceresi bulunmuyor.
                         </td>
                       </tr>
@@ -1083,9 +1142,103 @@ export const ResourceManagerModal: React.FC = () => {
                         const startMs = new Date(dt.startTime).getTime();
                         const endMs = new Date(dt.endTime).getTime();
                         const durMin = Math.round((endMs - startMs) / 60000);
+                        const isEditing = editingDowntimeId === dt.id;
+                        const isConfirmingDelete = confirmDeleteDtId === dt.id;
+
+                        if (isEditing) {
+                          return (
+                            <tr key={dt.id} className="bg-slate-900/90 border-amber-500/50">
+                              <td colSpan={7} className="p-3">
+                                <form onSubmit={handleSaveEditDowntime} className="space-y-2.5">
+                                  <div className="flex items-center justify-between text-amber-300 font-bold text-xs pb-1 border-b border-slate-800">
+                                    <span>{t('editDowntime')}: {dt.id}</span>
+                                  </div>
+
+                                  <div className="grid grid-cols-5 gap-2.5 font-sans">
+                                    <div>
+                                      <label className="text-[10px] text-slate-400 block mb-0.5">{t('targetCenter')}</label>
+                                      <select
+                                        value={editDtResourceId}
+                                        onChange={(e) => setEditDtResourceId(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs focus:border-amber-500"
+                                      >
+                                        {resourceList.map((r) => (
+                                          <option key={r.id} value={r.id}>
+                                            {r.code} ({r.name})
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+
+                                    <div>
+                                      <label className="text-[10px] text-slate-400 block mb-0.5">{t('maintenanceReason')}</label>
+                                      <input
+                                        type="text"
+                                        required
+                                        value={editDtReason}
+                                        onChange={(e) => setEditDtReason(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs focus:border-amber-500"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="text-[10px] text-slate-400 block mb-0.5">Başlangıç Tarih/Saat</label>
+                                      <input
+                                        type="datetime-local"
+                                        required
+                                        value={editDtStartTime}
+                                        onChange={(e) => setEditDtStartTime(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs font-mono focus:border-amber-500"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="text-[10px] text-slate-400 block mb-0.5">Bitiş Tarih/Saat</label>
+                                      <input
+                                        type="datetime-local"
+                                        required
+                                        value={editDtEndTime}
+                                        onChange={(e) => setEditDtEndTime(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs font-mono focus:border-amber-500"
+                                      />
+                                    </div>
+
+                                    <div className="flex items-center gap-2 pt-4">
+                                      <label className="flex items-center gap-1.5 text-[11px] text-slate-300">
+                                        <input
+                                          type="checkbox"
+                                          checked={editDtIsPlanned}
+                                          onChange={(e) => setEditDtIsPlanned(e.target.checked)}
+                                          className="rounded border-slate-700"
+                                        />
+                                        <span>Planlı Koruyucu Bakım</span>
+                                      </label>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex justify-end gap-2 pt-1 border-t border-slate-800">
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingDowntimeId(null)}
+                                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded text-xs"
+                                    >
+                                      {t('cancel')}
+                                    </button>
+                                    <button
+                                      type="submit"
+                                      className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3.5 py-1 rounded text-xs shadow-sm"
+                                    >
+                                      {t('saveChanges')}
+                                    </button>
+                                  </div>
+                                </form>
+                              </td>
+                            </tr>
+                          );
+                        }
 
                         return (
-                          <tr key={dt.id} className="hover:bg-slate-800/40">
+                          <tr key={dt.id} className="hover:bg-slate-800/40 transition-colors">
                             <td className="p-2.5 font-bold text-cyan-300">
                               {res ? `${res.code} (${res.name})` : dt.resourceId}
                             </td>
@@ -1107,6 +1260,45 @@ export const ResourceManagerModal: React.FC = () => {
                               >
                                 {dt.isPlanned ? 'Planlı Koruyucu Bakım' : 'Hat Arızası'}
                               </span>
+                            </td>
+                            <td className="p-2.5 text-right">
+                              {!isConfirmingDelete ? (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartEditDowntime(dt)}
+                                    className="text-slate-400 hover:text-amber-300 p-1 rounded hover:bg-slate-800 transition-colors"
+                                    title={t('editDowntime')}
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteDtId(dt.id)}
+                                    className="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-800 transition-colors"
+                                    title="Sil"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-end gap-1 animate-in fade-in font-sans">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteDowntime(dt.id)}
+                                    className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-2 py-0.5 rounded text-[10px]"
+                                  >
+                                    Sil
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteDtId(null)}
+                                    className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded text-[10px]"
+                                  >
+                                    Vazgeç
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         );
