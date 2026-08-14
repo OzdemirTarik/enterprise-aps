@@ -176,7 +176,6 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setSelectedOperationId(operation.id);
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
