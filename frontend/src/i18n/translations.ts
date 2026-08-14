@@ -54,11 +54,11 @@ export const translations = {
     chainDraggingTooltip: 'Tüm İş Emri Birlikte Kaydırılıyor',
 
     // Categories
-    allCenters: 'Tüm Merkezler (8)',
-    smtLines: 'SMT Hatları (2)',
-    thtLines: 'THT & Lehimleme (2)',
-    testStations: 'Test & Muayene (2)',
-    coatingRouter: 'Kaplama & Router (2)',
+    allCenters: 'Tüm Merkezler',
+    smtLines: 'SMT Hatları',
+    thtLines: 'THT & Lehimleme',
+    testStations: 'Test & Muayene',
+    coatingRouter: 'Kaplama & Router',
 
     // Sidebar
     workCenters: 'EMS Merkezleri',
@@ -350,11 +350,11 @@ export const translations = {
     chainDraggingTooltip: 'Shifting Entire Work Order Chain',
 
     // Categories
-    allCenters: 'All Centers (8)',
-    smtLines: 'SMT Lines (2)',
-    thtLines: 'THT & Soldering (2)',
-    testStations: 'Test & Inspection (2)',
-    coatingRouter: 'Coating & Router (2)',
+    allCenters: 'All Centers',
+    smtLines: 'SMT Lines',
+    thtLines: 'THT & Soldering',
+    testStations: 'Test & Inspection',
+    coatingRouter: 'Coating & Router',
 
     // Sidebar
     workCenters: 'EMS Centers',

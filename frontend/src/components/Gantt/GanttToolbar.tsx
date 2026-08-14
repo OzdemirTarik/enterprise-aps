@@ -1,5 +1,5 @@
 import React from 'react';
-import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
+import { useScheduleStore, computeCriticalPath, isResourceMatchingCategory } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import {
   Plus,
@@ -30,6 +30,7 @@ export const GanttToolbar: React.FC = () => {
   const { t } = useTranslation();
   const zoomLevel = useScheduleStore((state) => state.zoomLevel);
   const setZoomLevel = useScheduleStore((state) => state.setZoomLevel);
+  const resources = useScheduleStore((state) => state.resources);
   const workOrders = useScheduleStore((state) => state.workOrders);
   const operations = useScheduleStore((state) => state.operations);
   const deleteWorkOrder = useScheduleStore((state) => state.deleteWorkOrder);
@@ -67,6 +68,17 @@ export const GanttToolbar: React.FC = () => {
   const fetchSchedule = useScheduleStore((state) => state.fetchSchedule);
 
   const workOrderList = Object.values(workOrders);
+  const resourceList = Object.values(resources);
+
+  const categoryCounts = React.useMemo(() => {
+    return {
+      ALL: resourceList.length,
+      SMT: resourceList.filter((r) => isResourceMatchingCategory(r, 'SMT')).length,
+      THT: resourceList.filter((r) => isResourceMatchingCategory(r, 'THT')).length,
+      TEST: resourceList.filter((r) => isResourceMatchingCategory(r, 'TEST')).length,
+      COAT: resourceList.filter((r) => isResourceMatchingCategory(r, 'COAT')).length,
+    };
+  }, [resourceList]);
 
   const criticalResult = React.useMemo(() => {
     if (!isCriticalPathActive) return null;
@@ -154,7 +166,7 @@ export const GanttToolbar: React.FC = () => {
               }`}
             >
               <Icon className="w-3 h-3" />
-              <span>{t(cat.labelKey)}</span>
+              <span>{t(cat.labelKey)} ({categoryCounts[cat.id]})</span>
             </button>
           );
         })}
