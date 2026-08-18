@@ -12,7 +12,7 @@ interface GanttRowProps {
   rowHeight: number;
 }
 
-export const GanttRow: React.FC<GanttRowProps> = ({
+const GanttRowComponent: React.FC<GanttRowProps> = ({
   resource,
   minuteWidth,
   rowHeight,
@@ -197,3 +197,5 @@ export const GanttRow: React.FC<GanttRowProps> = ({
     </div>
   );
 };
+
+export const GanttRow = React.memo(GanttRowComponent);

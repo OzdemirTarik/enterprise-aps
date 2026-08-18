@@ -13,7 +13,7 @@ interface GanttOperationBlockProps {
   rowHeight: number;
 }
 
-export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
+const GanttOperationBlockComponent: React.FC<GanttOperationBlockProps> = ({
   operation,
   minuteWidth,
 }) => {
@@ -109,7 +109,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
 
   const isSearchHit = !!searchQuery && matchesSearch;
 
-  // Move Dragging (Horizontal + Snap + Chain Drag)
+  // Move Dragging (Horizontal + Snap + Chain Drag) - 60FPS RAF Optimized
   const handleMouseDownMove = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     if (operation.isLocked) return;
@@ -121,43 +121,50 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
 
     const startClientX = e.clientX;
     let currentOffsetMin = 0;
+    let rafId: number | null = null;
+    const allOpsList = Object.values(operations);
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaPx = moveEvent.clientX - startClientX;
-      const rawDeltaMin = deltaPx / minuteWidth;
-      const rawProposedStartMin = baseStartMinutes + rawDeltaMin;
-      const totalDurMin = operation.setupDurationMinutes + effectiveDuration;
+      if (rafId) cancelAnimationFrame(rafId);
 
-      const shouldApplyMagneticSnap = isMagneticSnapActive && !moveEvent.altKey;
+      rafId = requestAnimationFrame(() => {
+        const deltaPx = moveEvent.clientX - startClientX;
+        const rawDeltaMin = deltaPx / minuteWidth;
+        const rawProposedStartMin = baseStartMinutes + rawDeltaMin;
+        const totalDurMin = operation.setupDurationMinutes + effectiveDuration;
 
-      if (shouldApplyMagneticSnap) {
-        const snapResult = findMagneticSnap({
-          proposedStartMinutes: rawProposedStartMin,
-          totalDurationMinutes: totalDurMin,
-          currentOp: operation,
-          allOperations: Object.values(operations),
-          shifts,
-          timelineStart,
-          minuteWidth,
-        });
+        const shouldApplyMagneticSnap = isMagneticSnapActive && !moveEvent.altKey;
 
-        const effectiveDelta = snapResult.snappedStartMinutes - baseStartMinutes;
-        currentOffsetMin = effectiveDelta;
-        setDragOffsetMinutes(effectiveDelta);
-        setActiveSnapTarget(snapResult.snapTarget);
-      } else {
-        const snappedDeltaMin = Math.round(rawDeltaMin / 5) * 5;
-        currentOffsetMin = snappedDeltaMin;
-        setDragOffsetMinutes(snappedDeltaMin);
-        setActiveSnapTarget(null);
-      }
+        if (shouldApplyMagneticSnap) {
+          const snapResult = findMagneticSnap({
+            proposedStartMinutes: rawProposedStartMin,
+            totalDurationMinutes: totalDurMin,
+            currentOp: operation,
+            allOperations: allOpsList,
+            shifts,
+            timelineStart,
+            minuteWidth,
+          });
 
-      if (moveEvent.shiftKey || isChainDragActive) {
-        setIsShiftPressedWhileDragging(true);
-      }
+          const effectiveDelta = snapResult.snappedStartMinutes - baseStartMinutes;
+          currentOffsetMin = effectiveDelta;
+          setDragOffsetMinutes(effectiveDelta);
+          setActiveSnapTarget(snapResult.snapTarget);
+        } else {
+          const snappedDeltaMin = Math.round(rawDeltaMin / 5) * 5;
+          currentOffsetMin = snappedDeltaMin;
+          setDragOffsetMinutes(snappedDeltaMin);
+          setActiveSnapTarget(null);
+        }
+
+        if (moveEvent.shiftKey || isChainDragActive) {
+          setIsShiftPressedWhileDragging(true);
+        }
+      });
     };
 
     const handleMouseUp = () => {
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       setIsDragging(false);
@@ -183,7 +190,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Right Edge Duration Resize Dragging
+  // Right Edge Duration Resize Dragging - RAF Optimized
   const handleMouseDownResizeRight = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     if (operation.isLocked) return;
@@ -192,19 +199,25 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     setIsResizingRight(true);
     const startClientX = e.clientX;
     let currentDeltaMin = 0;
+    let rafResizeId: number | null = null;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaPx = moveEvent.clientX - startClientX;
-      const rawDeltaMin = deltaPx / minuteWidth;
-      const snappedDeltaMin = Math.round(rawDeltaMin / 15) * 15;
-      const newDuration = operation.durationMinutes + snappedDeltaMin;
-      if (newDuration >= 15) {
-        currentDeltaMin = snappedDeltaMin;
-        setResizeDeltaMinutes(snappedDeltaMin);
-      }
+      if (rafResizeId) cancelAnimationFrame(rafResizeId);
+
+      rafResizeId = requestAnimationFrame(() => {
+        const deltaPx = moveEvent.clientX - startClientX;
+        const rawDeltaMin = deltaPx / minuteWidth;
+        const snappedDeltaMin = Math.round(rawDeltaMin / 15) * 15;
+        const newDuration = operation.durationMinutes + snappedDeltaMin;
+        if (newDuration >= 15) {
+          currentDeltaMin = snappedDeltaMin;
+          setResizeDeltaMinutes(snappedDeltaMin);
+        }
+      });
     };
 
     const handleMouseUp = () => {
+      if (rafResizeId) cancelAnimationFrame(rafResizeId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       setIsResizingRight(false);
@@ -453,3 +466,5 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     </div>
   );
 };
+
+export const GanttOperationBlock = React.memo(GanttOperationBlockComponent);

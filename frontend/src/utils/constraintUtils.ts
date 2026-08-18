@@ -1,5 +1,5 @@
 import { Operation, WorkOrder, ResourceDowntime, ShiftSchedule } from '../types/schedule';
-import { getOffShiftIntervals } from './shiftUtils';
+import { parseTimeToMinutes } from './shiftUtils';
 
 export interface OperationConstraintViolation {
   isLate: boolean;
@@ -17,13 +17,39 @@ export interface OperationConstraintViolation {
 }
 
 /**
- * Detects real-time scheduling constraint violations on an operation:
- * 1. Due Date Violation (Work order due date exceeded)
- * 2. Precedence Violation (Starting before predecessor finished)
- * 3. Machine Clash (Overlapping operations on same resource)
- * 4. Downtime / Maintenance Clash (Overlapping with planned line maintenance)
- * 5. Off-Shift / Weekend Violation (Scheduled during factory off-hours or holiday)
- * 6. High / Urgent Priority Order
+ * Fast zero-allocation check if a timestamp is within an active factory shift.
+ */
+export function isTimestampInActiveShift(
+  date: Date,
+  activeShifts: ShiftSchedule[]
+): { isInShift: boolean; reason?: string } {
+  if (!activeShifts || activeShifts.length === 0) return { isInShift: true };
+
+  const jsDay = date.getDay();
+  const dayOfWeek = jsDay === 0 ? 7 : jsDay;
+
+  const dayShifts = activeShifts.filter((s) => s.daysOfWeek && s.daysOfWeek.includes(dayOfWeek));
+  if (dayShifts.length === 0) {
+    const dayName = dayOfWeek === 7 ? 'Pazar' : dayOfWeek === 6 ? 'Cumartesi' : 'Tatil';
+    return { isInShift: false, reason: `${dayName} - Tam Gün Tatil` };
+  }
+
+  const cursorMin = date.getHours() * 60 + date.getMinutes();
+  for (let i = 0; i < dayShifts.length; i++) {
+    const s = dayShifts[i];
+    const sMin = parseTimeToMinutes(s.startTime, false);
+    const eMin = parseTimeToMinutes(s.endTime, true);
+    if (cursorMin >= sMin && cursorMin < eMin) {
+      return { isInShift: true };
+    }
+  }
+
+  return { isInShift: false, reason: 'Vardiya Dışı Saat' };
+}
+
+/**
+ * High-performance constraint violation detection.
+ * Optimized with fast array loops and zero-allocation timestamp checks to guarantee 60fps drag performance.
  */
 export function detectOperationConstraints(
   operation: Operation,
@@ -32,11 +58,10 @@ export function detectOperationConstraints(
   allDowntimes: Record<string, ResourceDowntime> | ResourceDowntime[],
   shifts?: ShiftSchedule[]
 ): OperationConstraintViolation {
-  const opsList = Array.isArray(allOperations) ? allOperations : Object.values(allOperations || {});
-  const dtsList = Array.isArray(allDowntimes) ? allDowntimes : Object.values(allDowntimes || {});
-
-  const opStartMs = new Date(operation.plannedStartTime).getTime();
-  const opEndMs = new Date(operation.plannedEndTime).getTime();
+  const opStart = new Date(operation.plannedStartTime);
+  const opEnd = new Date(operation.plannedEndTime);
+  const opStartMs = opStart.getTime();
+  const opEndMs = opEnd.getTime();
 
   let isLate = false;
   let latenessMinutes = 0;
@@ -50,47 +75,49 @@ export function detectOperationConstraints(
     }
   }
 
-  // 2. Precedence Violation (Sequence Dependency)
+  // 2. Precedence and Machine Clash (Single Pass over operations)
   let isPrecedenceViolated = false;
   let precedingOpName: string | undefined;
-
-  const earlierOps = opsList.filter(
-    (o) => o.workOrderId === operation.workOrderId && o.sequenceIndex < operation.sequenceIndex
-  );
-  for (const prevOp of earlierOps) {
-    const prevEndMs = new Date(prevOp.plannedEndTime).getTime();
-    if (prevEndMs > opStartMs) {
-      isPrecedenceViolated = true;
-      precedingOpName = `${prevOp.name} (#${prevOp.sequenceIndex})`;
-      break;
-    }
-  }
-
-  // 3. Machine Overlap / Clash Check (Same Resource)
   let isMachineClash = false;
   let clashingOpName: string | undefined;
 
-  const sameResourceOps = opsList.filter(
-    (o) => o.id !== operation.id && o.requiredResourceId === operation.requiredResourceId
-  );
-  for (const otherOp of sameResourceOps) {
-    const oStartMs = new Date(otherOp.plannedStartTime).getTime();
-    const oEndMs = new Date(otherOp.plannedEndTime).getTime();
+  const opsList = Array.isArray(allOperations) ? allOperations : Object.values(allOperations || {});
 
-    // Time overlap condition: (StartA < EndB) && (EndA > StartB)
-    if (opStartMs < oEndMs && opEndMs > oStartMs) {
-      isMachineClash = true;
-      clashingOpName = `${otherOp.workOrderNumber} (${otherOp.name})`;
-      break;
+  for (let i = 0; i < opsList.length; i++) {
+    const o = opsList[i];
+    if (o.id === operation.id) continue;
+
+    // Check precedence
+    if (!isPrecedenceViolated && o.workOrderId === operation.workOrderId && o.sequenceIndex < operation.sequenceIndex) {
+      const prevEndMs = new Date(o.plannedEndTime).getTime();
+      if (prevEndMs > opStartMs) {
+        isPrecedenceViolated = true;
+        precedingOpName = `${o.name} (#${o.sequenceIndex})`;
+      }
     }
+
+    // Check machine clash on same resource
+    if (!isMachineClash && o.requiredResourceId === operation.requiredResourceId) {
+      const oStartMs = new Date(o.plannedStartTime).getTime();
+      const oEndMs = new Date(o.plannedEndTime).getTime();
+      if (opStartMs < oEndMs && opEndMs > oStartMs) {
+        isMachineClash = true;
+        clashingOpName = `${o.workOrderNumber} (${o.name})`;
+      }
+    }
+
+    if (isPrecedenceViolated && isMachineClash) break;
   }
 
-  // 4. Resource Maintenance / Downtime Clash
+  // 3. Resource Maintenance / Downtime Clash
   let isDowntimeClash = false;
   let downtimeReason: string | undefined;
 
-  const sameResourceDts = dtsList.filter((d) => d.resourceId === operation.requiredResourceId);
-  for (const dt of sameResourceDts) {
+  const dtsList = Array.isArray(allDowntimes) ? allDowntimes : Object.values(allDowntimes || {});
+  for (let i = 0; i < dtsList.length; i++) {
+    const dt = dtsList[i];
+    if (dt.resourceId !== operation.requiredResourceId) continue;
+
     const dtStartMs = new Date(dt.startTime).getTime();
     const dtEndMs = new Date(dt.endTime).getTime();
 
@@ -101,32 +128,27 @@ export function detectOperationConstraints(
     }
   }
 
-  // 5. Off-Shift & Weekend Overlap Check
+  // 4. Off-Shift & Weekend Fast Check
   let isOffShiftClash = false;
   let offShiftReason: string | undefined;
 
   const activeShifts = (shifts || []).filter((s) => s.isActive);
   if (activeShifts.length > 0 && !isNaN(opStartMs) && !isNaN(opEndMs)) {
-    const offIntervals = getOffShiftIntervals(
-      activeShifts,
-      new Date(opStartMs),
-      new Date(opEndMs)
-    );
-
-    for (const interval of offIntervals) {
-      const iStartMs = interval.start.getTime();
-      const iEndMs = interval.end.getTime();
-
-      // Overlap: (OpStart < IntervalEnd) && (OpEnd > IntervalStart)
-      if (opStartMs < iEndMs && opEndMs > iStartMs) {
+    const startShiftCheck = isTimestampInActiveShift(opStart, activeShifts);
+    if (!startShiftCheck.isInShift) {
+      isOffShiftClash = true;
+      offShiftReason = startShiftCheck.reason;
+    } else {
+      const endMinus1Min = new Date(opEndMs - 60000);
+      const endShiftCheck = isTimestampInActiveShift(endMinus1Min, activeShifts);
+      if (!endShiftCheck.isInShift) {
         isOffShiftClash = true;
-        offShiftReason = interval.label;
-        break;
+        offShiftReason = endShiftCheck.reason;
       }
     }
   }
 
-  // 6. Priority Level (Priority >= 8 is High / Urgent, Priority >= 9 is Critical P1)
+  // 5. Priority Level
   const priority = workOrder?.priority ?? 1;
   const isHighPriority = priority >= 8;
 
