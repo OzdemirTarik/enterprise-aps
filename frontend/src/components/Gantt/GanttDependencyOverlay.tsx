@@ -1,6 +1,6 @@
 import React from 'react';
 import { useScheduleStore, computeCriticalPath, isResourceMatchingCategory } from '../../store/useScheduleStore';
-import { parseISO } from 'date-fns';
+import { parseISO, startOfDay, isValid } from 'date-fns';
 import { Operation } from '../../types/schedule';
 
 interface GanttDependencyOverlayProps {
@@ -15,8 +15,10 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
   const resources = useScheduleStore((state) => state.resources);
   const operations = useScheduleStore((state) => state.operations);
   const workOrders = useScheduleStore((state) => state.workOrders);
-  const timelineStart = useScheduleStore((state) => state.timelineStart);
-  const timelineEnd = useScheduleStore((state) => state.timelineEnd);
+  const rawTimelineStart = useScheduleStore((state) => state.timelineStart);
+  const rawTimelineEnd = useScheduleStore((state) => state.timelineEnd);
+  const timelineStart = isValid(rawTimelineStart) ? startOfDay(rawTimelineStart) : startOfDay(new Date());
+  const timelineEnd = isValid(rawTimelineEnd) ? rawTimelineEnd : new Date(timelineStart.getTime() + 4 * 86400000);
   const selectedOperationId = useScheduleStore((state) => state.selectedOperationId);
   const hoveredOperationId = useScheduleStore((state) => state.hoveredOperationId);
   const isCriticalPathActive = useScheduleStore((state) => state.isCriticalPathActive);

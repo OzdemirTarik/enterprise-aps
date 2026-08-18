@@ -2,6 +2,7 @@ import React from 'react';
 import { ResourceDowntime } from '../../types/schedule';
 import { useScheduleStore } from '../../store/useScheduleStore';
 import { AlertTriangle, X } from 'lucide-react';
+import { startOfDay, isValid } from 'date-fns';
 
 interface GanttDowntimeBlockProps {
   downtime: ResourceDowntime;
@@ -12,7 +13,8 @@ export const GanttDowntimeBlock: React.FC<GanttDowntimeBlockProps> = ({
   downtime,
   minuteWidth,
 }) => {
-  const timelineStart = useScheduleStore((s) => s.timelineStart);
+  const rawTimelineStart = useScheduleStore((s) => s.timelineStart);
+  const timelineStart = isValid(rawTimelineStart) ? startOfDay(rawTimelineStart) : startOfDay(new Date());
   const deleteDowntime = useScheduleStore((s) => s.deleteDowntime);
 
   const startMs = new Date(downtime.startTime).getTime();

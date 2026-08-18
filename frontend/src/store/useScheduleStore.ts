@@ -14,6 +14,7 @@ import {
 import { scheduleApi } from '../services/api';
 import { Language } from '../i18n/translations';
 
+import { startOfDay } from 'date-fns';
 import {
   computeCriticalPath,
   computeResourceHeatmap,
@@ -267,7 +268,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
 
       const ops = Object.values(operationsMap);
       const nowTime = Date.now();
-      let tStart = new Date(nowTime - 12 * 3600 * 1000);
+      let tStart = startOfDay(new Date(nowTime - 12 * 3600 * 1000));
       let tEnd = new Date(nowTime + 4 * 86400 * 1000);
 
       if (ops.length > 0) {
@@ -281,7 +282,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         if (starts.length > 0 && ends.length > 0) {
           const minTime = Math.min(nowTime, ...starts);
           const maxTime = Math.max(nowTime + 48 * 3600 * 1000, ...ends);
-          tStart = new Date(minTime - 12 * 3600 * 1000);
+          tStart = startOfDay(new Date(minTime - 12 * 3600 * 1000));
           tEnd = new Date(maxTime + 24 * 3600 * 1000);
         }
       }

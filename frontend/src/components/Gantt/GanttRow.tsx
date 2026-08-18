@@ -4,7 +4,7 @@ import { useScheduleStore, computeResourceHeatmap } from '../../store/useSchedul
 import { getOffShiftIntervals } from '../../utils/shiftUtils';
 import { GanttOperationBlock } from './GanttOperationBlock';
 import { GanttDowntimeBlock } from './GanttDowntimeBlock';
-import { format } from 'date-fns';
+import { format, startOfDay, isValid } from 'date-fns';
 
 interface GanttRowProps {
   resource: Resource;
@@ -23,8 +23,11 @@ export const GanttRow: React.FC<GanttRowProps> = ({
   const locks = useScheduleStore((s) => s.locks);
   const isHeatmapActive = useScheduleStore((s) => s.isHeatmapActive);
   const isShiftOverlayActive = useScheduleStore((s) => s.isShiftOverlayActive);
-  const timelineStart = useScheduleStore((s) => s.timelineStart);
-  const timelineEnd = useScheduleStore((s) => s.timelineEnd);
+  const rawTimelineStart = useScheduleStore((s) => s.timelineStart);
+  const rawTimelineEnd = useScheduleStore((s) => s.timelineEnd);
+
+  const timelineStart = isValid(rawTimelineStart) ? startOfDay(rawTimelineStart) : startOfDay(new Date());
+  const timelineEnd = isValid(rawTimelineEnd) ? rawTimelineEnd : new Date(timelineStart.getTime() + 4 * 86400000);
 
   const resourceOps = useMemo(
     () => Object.values(operations).filter((op) => op.requiredResourceId === resource.id),

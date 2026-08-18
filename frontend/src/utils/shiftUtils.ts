@@ -54,12 +54,56 @@ export function getOffShiftIntervals(
     const dayOfWeek = jsDay === 0 ? 7 : jsDay;
     const isWeekend = dayOfWeek >= 6;
 
-    const dayShifts = activeShifts.filter((s) => s.daysOfWeek.includes(dayOfWeek));
+    // Previous day of week for cross-midnight shifts
+    const prevJsDay = addDays(currentDay, -1).getDay();
+    const prevDayOfWeek = prevJsDay === 0 ? 7 : prevJsDay;
 
-    if (dayShifts.length === 0) {
+    const dayShifts = activeShifts.filter((s) => s.daysOfWeek.includes(dayOfWeek));
+    const prevDayShifts = activeShifts.filter((s) => s.daysOfWeek.includes(prevDayOfWeek));
+
+    const workSpans: Array<{ startMin: number; endMin: number }> = [];
+
+    // 1. Shifts starting on current day
+    dayShifts.forEach((s) => {
+      const sMin = parseTimeToMinutes(s.startTime, false);
+      const eMin = parseTimeToMinutes(s.endTime, true);
+      if (eMin > sMin) {
+        workSpans.push({ startMin: sMin, endMin: eMin });
+      } else if (eMin < sMin) {
+        // Cross-midnight shift on this day (e.g. 22:00 to 24:00)
+        workSpans.push({ startMin: sMin, endMin: 1440 });
+      }
+    });
+
+    // 2. Shifts from previous day that carry over into current day (e.g. 22:00 to 06:00 -> 00:00 to 06:00)
+    prevDayShifts.forEach((s) => {
+      const sMin = parseTimeToMinutes(s.startTime, false);
+      const eMin = parseTimeToMinutes(s.endTime, true);
+      if (eMin < sMin && eMin > 0) {
+        workSpans.push({ startMin: 0, endMin: eMin });
+      }
+    });
+
+    if (workSpans.length === 0) {
       // Entire day is non-working
-      const dayStart = new Date(currentDay.getTime());
-      const dayEnd = new Date(currentDay.getTime() + 1440 * 60000);
+      const dayStart = new Date(
+        currentDay.getFullYear(),
+        currentDay.getMonth(),
+        currentDay.getDate(),
+        0,
+        0,
+        0,
+        0
+      );
+      const dayEnd = new Date(
+        currentDay.getFullYear(),
+        currentDay.getMonth(),
+        currentDay.getDate() + 1,
+        0,
+        0,
+        0,
+        0
+      );
       rawIntervals.push({
         start: dayStart,
         end: dayEnd,
@@ -67,16 +111,6 @@ export function getOffShiftIntervals(
         label: isWeekend ? 'Hafta Sonu (Weekend)' : 'Vardiya Dışı (Off-Shift)',
       });
     } else {
-      // Collect and sort working time spans in minutes from 0..1440
-      const workSpans: Array<{ startMin: number; endMin: number }> = [];
-      dayShifts.forEach((s) => {
-        const sMin = parseTimeToMinutes(s.startTime, false);
-        const eMin = parseTimeToMinutes(s.endTime, true);
-        if (eMin > sMin) {
-          workSpans.push({ startMin: sMin, endMin: eMin });
-        }
-      });
-
       workSpans.sort((a, b) => a.startMin - b.startMin);
 
       // Merge overlapping or adjacent work spans
@@ -98,22 +132,58 @@ export function getOffShiftIntervals(
       let cursorMin = 0;
       mergedWork.forEach((span) => {
         if (span.startMin > cursorMin) {
+          const sDate = new Date(
+            currentDay.getFullYear(),
+            currentDay.getMonth(),
+            currentDay.getDate(),
+            Math.floor(cursorMin / 60),
+            cursorMin % 60,
+            0,
+            0
+          );
+          const eDate = new Date(
+            currentDay.getFullYear(),
+            currentDay.getMonth(),
+            currentDay.getDate(),
+            Math.floor(span.startMin / 60),
+            span.startMin % 60,
+            0,
+            0
+          );
           rawIntervals.push({
-            start: new Date(currentDay.getTime() + cursorMin * 60000),
-            end: new Date(currentDay.getTime() + span.startMin * 60000),
+            start: sDate,
+            end: eDate,
             isWeekend,
-            label: 'Vardiya Dışı (Off-Shift)',
+            label: isWeekend ? 'Hafta Sonu (Weekend)' : 'Vardiya Dışı (Off-Shift)',
           });
         }
         cursorMin = Math.max(cursorMin, span.endMin);
       });
 
       if (cursorMin < 1440) {
+        const sDate = new Date(
+          currentDay.getFullYear(),
+          currentDay.getMonth(),
+          currentDay.getDate(),
+          Math.floor(cursorMin / 60),
+          cursorMin % 60,
+          0,
+          0
+        );
+        const eDate = new Date(
+          currentDay.getFullYear(),
+          currentDay.getMonth(),
+          currentDay.getDate() + 1,
+          0,
+          0,
+          0,
+          0
+        );
         rawIntervals.push({
-          start: new Date(currentDay.getTime() + cursorMin * 60000),
-          end: new Date(currentDay.getTime() + 1440 * 60000),
+          start: sDate,
+          end: eDate,
           isWeekend,
-          label: 'Vardiya Dışı (Off-Shift)',
+          label: isWeekend ? 'Hafta Sonu (Weekend)' : 'Vardiya Dışı (Off-Shift)',
         });
       }
     }
@@ -155,3 +225,4 @@ export function getOffShiftIntervals(
 
   return mergedIntervals;
 }
+

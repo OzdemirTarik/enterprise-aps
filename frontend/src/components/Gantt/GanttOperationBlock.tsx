@@ -3,7 +3,7 @@ import { Operation } from '../../types/schedule';
 import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Lock, Link2, Flame } from 'lucide-react';
-import { format, isValid } from 'date-fns';
+import { format, isValid, startOfDay } from 'date-fns';
 
 interface GanttOperationBlockProps {
   operation: Operation;
@@ -16,7 +16,8 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   minuteWidth,
 }) => {
   const { t } = useTranslation();
-  const timelineStart = useScheduleStore((s) => s.timelineStart);
+  const rawTimelineStart = useScheduleStore((s) => s.timelineStart);
+  const timelineStart = isValid(rawTimelineStart) ? startOfDay(rawTimelineStart) : startOfDay(new Date());
   const selectedOperationId = useScheduleStore((s) => s.selectedOperationId);
   const hoveredOperationId = useScheduleStore((s) => s.hoveredOperationId);
   const scrollToOperationId = useScheduleStore((s) => s.scrollToOperationId);
