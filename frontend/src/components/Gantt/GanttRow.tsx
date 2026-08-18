@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Resource } from '../../types/schedule';
 import { useScheduleStore, computeResourceHeatmap } from '../../store/useScheduleStore';
-import { getOffShiftIntervals } from '../../utils/shiftUtils';
 import { GanttOperationBlock } from './GanttOperationBlock';
 import { GanttDowntimeBlock } from './GanttDowntimeBlock';
 import { format, startOfDay, isValid } from 'date-fns';
@@ -19,10 +18,8 @@ const GanttRowComponent: React.FC<GanttRowProps> = ({
 }) => {
   const operations = useScheduleStore((s) => s.operations);
   const downtimes = useScheduleStore((s) => s.downtimes);
-  const shifts = useScheduleStore((s) => s.shifts);
   const locks = useScheduleStore((s) => s.locks);
   const isHeatmapActive = useScheduleStore((s) => s.isHeatmapActive);
-  const isShiftOverlayActive = useScheduleStore((s) => s.isShiftOverlayActive);
   const rawTimelineStart = useScheduleStore((s) => s.timelineStart);
   const rawTimelineEnd = useScheduleStore((s) => s.timelineEnd);
 
@@ -41,12 +38,6 @@ const GanttRowComponent: React.FC<GanttRowProps> = ({
 
   const activeLock = locks[resource.id];
   const timelineStartMs = timelineStart.getTime();
-
-  // Compute off-shift / non-working intervals
-  const offShiftIntervals = useMemo(() => {
-    if (!isShiftOverlayActive) return [];
-    return getOffShiftIntervals(shifts, timelineStart, timelineEnd);
-  }, [isShiftOverlayActive, shifts, timelineStart, timelineEnd]);
 
   // Compute 4-hour Heatmap Bins for this resource track
   const heatmapBins = useMemo(() => {
@@ -67,58 +58,6 @@ const GanttRowComponent: React.FC<GanttRowProps> = ({
       className="relative w-full border-b border-slate-800/60 transition-colors"
       style={{ height: `${rowHeight}px` }}
     >
-      {/* Off-Shift & Non-Working Time Diagonal Shading Background */}
-      {isShiftOverlayActive && offShiftIntervals.length > 0 && (
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-          {offShiftIntervals.map((interval) => {
-            const startMs = interval.start.getTime();
-            const endMs = interval.end.getTime();
-            const left = Math.max(0, ((startMs - timelineStartMs) / 60000) * minuteWidth);
-            const width = Math.max(4, ((endMs - startMs) / 60000) * minuteWidth);
-
-            return (
-              <div
-                key={interval.id}
-                title={`${interval.label}: ${format(interval.start, 'dd.MM HH:mm')} - ${format(interval.end, 'dd.MM HH:mm')}`}
-                className={`absolute top-0 bottom-0 border-r border-slate-800/80 transition-opacity ${
-                  interval.isFullDayOff ? 'opacity-85' : 'opacity-50'
-                }`}
-                style={{
-                  left: `${left}px`,
-                  width: `${width}px`,
-                  background: interval.isFullDayOff
-                    ? `repeating-linear-gradient(
-                        -45deg,
-                        rgba(10, 15, 30, 0.96),
-                        rgba(10, 15, 30, 0.96) 10px,
-                        rgba(30, 41, 59, 0.65) 10px,
-                        rgba(30, 41, 59, 0.65) 20px
-                      )`
-                    : `repeating-linear-gradient(
-                        -45deg,
-                        rgba(15, 23, 42, 0.75),
-                        rgba(15, 23, 42, 0.75) 6px,
-                        rgba(30, 41, 59, 0.35) 6px,
-                        rgba(30, 41, 59, 0.35) 12px
-                      )`,
-                }}
-              >
-                {width >= 60 && (
-                  <div
-                    className={`absolute top-1 left-1.5 px-1 py-0.5 rounded text-[8px] font-mono border select-none pointer-events-none truncate max-w-[90%] ${
-                      interval.isFullDayOff
-                        ? 'bg-amber-950/80 text-amber-300 border-amber-800/50'
-                        : 'bg-slate-900/90 text-slate-400 border-slate-800'
-                    }`}
-                  >
-                    {interval.label}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Active Regional Lock Overlay if locked by another user */}
       {activeLock && (
