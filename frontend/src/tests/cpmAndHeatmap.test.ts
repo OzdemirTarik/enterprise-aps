@@ -1,7 +1,8 @@
 import { computeCriticalPath, computeResourceHeatmap, isResourceMatchingCategory } from '../utils/analytics';
 import { getOffShiftIntervals } from '../utils/shiftUtils';
 import { findMagneticSnap } from '../utils/magneticSnap';
-import { Operation, ResourceDowntime } from '../types/schedule';
+import { detectOperationConstraints } from '../utils/constraintUtils';
+import { Operation, WorkOrder, ResourceDowntime } from '../types/schedule';
 
 function runTests() {
   console.log('=== TEST SCENARIO 1: Critical Path CPM with 2 Independent Work Orders ===');
@@ -317,7 +318,83 @@ function runTests() {
 
   console.log('✅ Smart Magnetic Snapping Test Scenario 5 PASSED.');
 
-  console.log('\nALL ANALYTICS, SHIFT, SNAP & CATEGORY UNIT TESTS PASSED!');
+  console.log('\n=== TEST SCENARIO 6: Real-Time Constraint Violations Detection (Late, Precedence, Clash, Priority) ===');
+  
+  const sampleWorkOrder: WorkOrder = {
+    id: 'WO-100',
+    orderNumber: 'WO-100',
+    productCode: 'PCBA-01',
+    productName: 'Main Controller',
+    quantity: 500,
+    releaseDate: '2026-08-17T08:00:00.000Z',
+    dueDate: '2026-08-17T11:00:00.000Z', // Due at 11:00
+    priority: 9, // Urgent Priority P9
+    status: 'Planned',
+    operationIds: ['op-step-1', 'op-step-2'],
+  };
+
+  // Step 1: 08:00 to 10:00 (On-time, before due date)
+  const step1: Operation = {
+    id: 'op-step-1',
+    workOrderId: 'WO-100',
+    workOrderNumber: 'WO-100',
+    sequenceIndex: 1,
+    name: 'SMT Top',
+    productType: 'IoT',
+    requiredResourceId: 'RES-01',
+    plannedStartTime: '2026-08-17T08:00:00.000Z',
+    plannedEndTime: '2026-08-17T10:00:00.000Z',
+    durationMinutes: 120,
+    setupDurationMinutes: 0,
+    status: 'Planned',
+    precedenceOperationIds: [],
+  };
+
+  // Step 2: 09:30 to 12:30 on RES-01 (Multiple Violations: starts before step 1 finishes, overlaps RES-01, finishes after 11:00 due date)
+  const step2: Operation = {
+    id: 'op-step-2',
+    workOrderId: 'WO-100',
+    workOrderNumber: 'WO-100',
+    sequenceIndex: 2,
+    name: 'THT Wave',
+    productType: 'IoT',
+    requiredResourceId: 'RES-01',
+    plannedStartTime: '2026-08-17T09:30:00.000Z',
+    plannedEndTime: '2026-08-17T12:30:00.000Z',
+    durationMinutes: 180,
+    setupDurationMinutes: 0,
+    status: 'Planned',
+    precedenceOperationIds: ['op-step-1'],
+  };
+
+  const detectedConstraints = detectOperationConstraints(
+    step2,
+    sampleWorkOrder,
+    [step1, step2],
+    []
+  );
+
+  console.log('Detected Step 2 Violations:', detectedConstraints);
+
+  if (!detectedConstraints.isLate || detectedConstraints.latenessMinutes !== 90) {
+    throw new Error(`FAILED: Expected isLate=true with 90 min lateness, got isLate=${detectedConstraints.isLate}, lateness=${detectedConstraints.latenessMinutes}`);
+  }
+
+  if (!detectedConstraints.isPrecedenceViolated) {
+    throw new Error('FAILED: Expected isPrecedenceViolated=true (starts at 09:30 before Step 1 ends at 10:00)');
+  }
+
+  if (!detectedConstraints.isMachineClash) {
+    throw new Error('FAILED: Expected isMachineClash=true (overlaps RES-01 with Step 1)');
+  }
+
+  if (!detectedConstraints.isHighPriority || detectedConstraints.priorityLevel !== 9) {
+    throw new Error('FAILED: Expected isHighPriority=true with priority 9');
+  }
+
+  console.log('✅ Real-Time Constraint Violations Test Scenario 6 PASSED.');
+
+  console.log('\nALL 6 ANALYTICS, SHIFT, SNAP & CONSTRAINT UNIT TESTS PASSED!');
 }
 
 runTests();

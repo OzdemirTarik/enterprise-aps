@@ -64,6 +64,15 @@ export const translations = {
     snappedToSuccessor: 'Ardıl İşlem Başlangıcına Yapıştı',
     snappedToShiftStart: 'Vardiya Başlangıcına Yapıştı',
     snappedToShiftEnd: 'Vardiya Bitişine Yapıştı',
+    badgeLate: 'Gecikme',
+    badgeLateTooltip: 'Teslim tarihi aşımı: Teslimden {time} sonra bitiyor!',
+    badgePrecedence: 'Sıra Hatası',
+    badgePrecedenceTooltip: 'Öncül işlem tamamlanmadan başlıyor: {op}',
+    badgeClash: 'Çakışma',
+    badgeClashTooltip: 'Aynı hatta çakışan işlem: {op}',
+    badgeDowntimeClash: 'Bakım Çakışması',
+    badgeDowntimeClashTooltip: 'Hat bakım aralığı ile çakışıyor: {reason}',
+    badgeUrgentPriority: 'Acil Sipariş (P{priority})',
 
     // Categories
     allCenters: 'Tüm Merkezler',
@@ -372,6 +381,15 @@ export const translations = {
     snappedToSuccessor: 'Snapped to Successor Start',
     snappedToShiftStart: 'Snapped to Shift Start',
     snappedToShiftEnd: 'Snapped to Shift End',
+    badgeLate: 'Late',
+    badgeLateTooltip: 'Due date violated: finishes {time} after due date!',
+    badgePrecedence: 'Sequence Error',
+    badgePrecedenceTooltip: 'Starts before predecessor finishes: {op}',
+    badgeClash: 'Clash',
+    badgeClashTooltip: 'Machine time clash with: {op}',
+    badgeDowntimeClash: 'Maintenance Clash',
+    badgeDowntimeClashTooltip: 'Clashes with line maintenance: {reason}',
+    badgeUrgentPriority: 'Urgent Order (P{priority})',
 
     // Categories
     allCenters: 'All Centers',

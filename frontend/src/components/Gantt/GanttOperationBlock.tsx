@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Operation } from '../../types/schedule';
 import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Lock, Link2, Flame, Magnet } from 'lucide-react';
+import { Lock, Link2, Flame, Magnet, AlertTriangle, AlertOctagon, Zap, Star } from 'lucide-react';
 import { format, isValid, startOfDay } from 'date-fns';
 import { findMagneticSnap, SnapTarget } from '../../utils/magneticSnap';
+import { detectOperationConstraints } from '../../utils/constraintUtils';
 
 interface GanttOperationBlockProps {
   operation: Operation;
@@ -37,6 +38,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   const shifts = useScheduleStore((s) => s.shifts);
   const operations = useScheduleStore((s) => s.operations);
   const workOrders = useScheduleStore((s) => s.workOrders);
+  const downtimes = useScheduleStore((s) => s.downtimes);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
@@ -72,6 +74,22 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   // Tooltip live times
   const tooltipStartMs = startMs + dragOffsetMinutes * 60000;
   const tooltipEndMs = tooltipStartMs + (operation.setupDurationMinutes + effectiveDuration) * 60000;
+
+  // Parent Work Order and Scheduling Constraint Violations
+  const parentWorkOrder = workOrders[operation.workOrderId];
+
+  const constraints = useMemo(() => {
+    const simulatedOp: Operation =
+      dragOffsetMinutes === 0
+        ? operation
+        : {
+            ...operation,
+            plannedStartTime: new Date(tooltipStartMs).toISOString(),
+            plannedEndTime: new Date(tooltipEndMs).toISOString(),
+          };
+
+    return detectOperationConstraints(simulatedOp, parentWorkOrder, operations, downtimes);
+  }, [operation, parentWorkOrder, operations, downtimes, dragOffsetMinutes, tooltipStartMs, tooltipEndMs]);
 
   // Search & Filter matching
   const matchesSearch =
@@ -215,6 +233,11 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   const getStatusBorder = () => {
     if (isTargetFocused) return 'border-cyan-400 ring-4 ring-cyan-400 shadow-2xl shadow-cyan-500/80 animate-pulse';
     if (isCritical) return 'border-rose-400 ring-2 ring-rose-500 shadow-[0_0_24px_rgba(244,63,94,0.95)] z-40';
+    if (constraints.isMachineClash || constraints.isDowntimeClash)
+      return 'border-red-500 ring-2 ring-red-500 shadow-[0_0_16px_rgba(239,68,68,0.85)] animate-pulse';
+    if (constraints.isPrecedenceViolated)
+      return 'border-amber-500 ring-2 ring-amber-500 shadow-[0_0_16px_rgba(245,158,11,0.85)]';
+    if (constraints.isLate) return 'border-rose-500 ring-1 ring-rose-500/80 shadow-rose-950/60';
     if (isSearchHit) return 'border-cyan-400 ring-2 ring-cyan-400/80 shadow-lg shadow-cyan-950';
     if (operation.status === 'Delayed') return 'border-rose-500 shadow-rose-950/40';
     if (operation.status === 'InProgress') return 'border-emerald-400 shadow-emerald-950/40';
@@ -344,8 +367,62 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
             <span className="text-slate-100 text-[11px] truncate">{operation.name}</span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 text-[10px] font-mono text-slate-400 pl-1">
-            <span className={`px-1.5 py-0.5 rounded border ${isCritical ? 'bg-rose-900/80 text-rose-200 border-rose-600' : 'bg-slate-800/80 border-slate-700/50'}`}>
+          <div className="flex items-center gap-1.5 shrink-0 text-[10px] font-mono pl-1">
+            {/* Urgent Priority Badge */}
+            {constraints.isHighPriority && (
+              <span
+                className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-400/50 text-[9px] font-bold shrink-0"
+                title={t('badgeUrgentPriority').replace('{priority}', String(constraints.priorityLevel))}
+              >
+                <Star className="w-2.5 h-2.5 text-amber-300 fill-amber-400" />
+                <span>P{constraints.priorityLevel}</span>
+              </span>
+            )}
+
+            {/* Sequence Error (Precedence) Badge */}
+            {constraints.isPrecedenceViolated && (
+              <span
+                className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-amber-950/90 text-amber-300 border border-amber-500/80 text-[9px] font-bold shrink-0 shadow-sm"
+                title={t('badgePrecedenceTooltip').replace('{op}', constraints.precedingOpName || '')}
+              >
+                <AlertOctagon className="w-2.5 h-2.5 text-amber-400" />
+                <span>{t('badgePrecedence')}</span>
+              </span>
+            )}
+
+            {/* Machine / Downtime Clash Badge */}
+            {(constraints.isMachineClash || constraints.isDowntimeClash) && (
+              <span
+                className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-red-950/95 text-red-200 border border-red-500 text-[9px] font-bold shrink-0 animate-bounce shadow-sm"
+                title={
+                  constraints.isMachineClash
+                    ? t('badgeClashTooltip').replace('{op}', constraints.clashingOpName || '')
+                    : t('badgeDowntimeClashTooltip').replace('{reason}', constraints.downtimeReason || '')
+                }
+              >
+                <Zap className="w-2.5 h-2.5 text-red-400 fill-red-400" />
+                <span>{constraints.isMachineClash ? t('badgeClash') : t('badgeDowntimeClash')}</span>
+              </span>
+            )}
+
+            {/* Late / Due Date Violation Badge */}
+            {constraints.isLate && (
+              <span
+                className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-rose-950/90 text-rose-300 border border-rose-500/70 text-[9px] font-bold shrink-0 animate-pulse shadow-sm"
+                title={t('badgeLateTooltip').replace(
+                  '{time}',
+                  constraints.latenessMinutes >= 60
+                    ? `${(constraints.latenessMinutes / 60).toFixed(1)}s`
+                    : `${constraints.latenessMinutes}dk`
+                )}
+              >
+                <AlertTriangle className="w-2.5 h-2.5 text-rose-400" />
+                <span>+{constraints.latenessMinutes >= 60 ? `${(constraints.latenessMinutes / 60).toFixed(1)}h` : `${constraints.latenessMinutes}m`}</span>
+              </span>
+            )}
+
+            {/* Duration Tag */}
+            <span className={`px-1.5 py-0.5 rounded border ${isCritical ? 'bg-rose-900/80 text-rose-200 border-rose-600' : 'bg-slate-800/80 text-slate-400 border-slate-700/50'}`}>
               {effectiveDuration}m
             </span>
           </div>
