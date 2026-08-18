@@ -39,7 +39,7 @@ public class SeedDemoDataCommandHandler : IRequestHandler<SeedDemoDataCommand, b
         await _context.ResourceDowntimes.AddRangeAsync(downtimes, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        _graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes);
+        _graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes, ShiftSchedule.GetDefaultTwoShifts());
         return true;
     }
 

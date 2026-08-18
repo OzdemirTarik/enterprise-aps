@@ -48,4 +48,30 @@ public class ShiftSchedule
             DisplayOrder = 3
         }
     };
+
+    public static List<ShiftSchedule> GetDefaultTwoShifts() => new()
+    {
+        new()
+        {
+            Id = "SHIFT-01",
+            Name = "1. Vardiya (Gündüz / 08:00 - 16:00)",
+            StartTime = "08:00",
+            EndTime = "16:00",
+            DaysOfWeek = new() { 1, 2, 3, 4, 5, 6 },
+            ColorCode = "#06b6d4",
+            IsActive = true,
+            DisplayOrder = 1
+        },
+        new()
+        {
+            Id = "SHIFT-02",
+            Name = "2. Vardiya (Akşam / 16:00 - 00:00)",
+            StartTime = "16:00",
+            EndTime = "00:00",
+            DaysOfWeek = new() { 1, 2, 3, 4, 5, 6 },
+            ColorCode = "#f59e0b",
+            IsActive = true,
+            DisplayOrder = 2
+        }
+    };
 }

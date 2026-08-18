@@ -31,7 +31,8 @@ public class DeleteSetupMatrixCommandHandler : IRequestHandler<DeleteSetupMatrix
             var workOrders = _graph.GetAllWorkOrders();
             var operations = _graph.GetAllOperations();
             var downtimes = _graph.GetAllDowntimes();
-            _graph.Initialize(resources, workOrders, operations, all, downtimes);
+            var shifts = _graph.GetAllShifts();
+            _graph.Initialize(resources, workOrders, operations, all, downtimes, shifts);
         }
 
         return true;
