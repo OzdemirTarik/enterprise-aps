@@ -81,18 +81,18 @@ export const GanttRow: React.FC<GanttRowProps> = ({
                 key={interval.id}
                 title={`${interval.label}: ${format(interval.start, 'dd.MM HH:mm')} - ${format(interval.end, 'dd.MM HH:mm')}`}
                 className={`absolute top-0 bottom-0 border-r border-slate-800/80 transition-opacity ${
-                  interval.isWeekend ? 'opacity-75' : 'opacity-45'
+                  interval.isFullDayOff ? 'opacity-85' : 'opacity-50'
                 }`}
                 style={{
                   left: `${left}px`,
                   width: `${width}px`,
-                  background: interval.isWeekend
+                  background: interval.isFullDayOff
                     ? `repeating-linear-gradient(
                         -45deg,
-                        rgba(15, 23, 42, 0.95),
-                        rgba(15, 23, 42, 0.95) 8px,
-                        rgba(30, 41, 59, 0.6) 8px,
-                        rgba(30, 41, 59, 0.6) 16px
+                        rgba(10, 15, 30, 0.96),
+                        rgba(10, 15, 30, 0.96) 10px,
+                        rgba(30, 41, 59, 0.65) 10px,
+                        rgba(30, 41, 59, 0.65) 20px
                       )`
                     : `repeating-linear-gradient(
                         -45deg,
@@ -103,9 +103,17 @@ export const GanttRow: React.FC<GanttRowProps> = ({
                       )`,
                 }}
               >
-                <div className="absolute top-1 left-1.5 px-1 py-0.2 rounded bg-slate-900/90 text-[8px] font-mono text-slate-500 border border-slate-800 select-none pointer-events-none">
-                  {interval.isWeekend ? 'Hafta Sonu / Weekend' : 'Vardiya Dışı'}
-                </div>
+                {width >= 60 && (
+                  <div
+                    className={`absolute top-1 left-1.5 px-1 py-0.5 rounded text-[8px] font-mono border select-none pointer-events-none truncate max-w-[90%] ${
+                      interval.isFullDayOff
+                        ? 'bg-amber-950/80 text-amber-300 border-amber-800/50'
+                        : 'bg-slate-900/90 text-slate-400 border-slate-800'
+                    }`}
+                  >
+                    {interval.label}
+                  </div>
+                )}
               </div>
             );
           })}

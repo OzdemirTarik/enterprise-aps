@@ -54,10 +54,17 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
 
   const days = Array.from({ length: daysCount }).map((_, idx) => {
     const dayDate = addDays(timelineStart, idx);
+    const jsDay = getDay(dayDate);
+    const isoDayNumber = jsDay === 0 ? 7 : jsDay;
+    const hasActiveShifts = shifts.some(
+      (s) => s.isActive && (s.daysOfWeek || [1, 2, 3, 4, 5, 6, 7]).includes(isoDayNumber)
+    );
     const dayLabelFormat = hourWidth < 15 ? 'EEE, dd MMM' : 'EEE, dd MMM yyyy';
     return {
       date: dayDate,
       label: format(dayDate, dayLabelFormat, { locale: dateLocale }),
+      hasActiveShifts,
+      isWeekend: isoDayNumber === 6 || isoDayNumber === 7,
       width: 24 * hourWidth,
     };
   });
@@ -102,10 +109,21 @@ export const GanttTimelineRuler: React.FC<GanttTimelineRulerProps> = ({
         {days.map((day, idx) => (
           <div
             key={idx}
-            className="flex items-center px-3 border-r border-slate-800 bg-[#141e33] font-semibold tracking-wider text-cyan-400 shrink-0 capitalize truncate"
+            className={`flex items-center justify-between px-3 border-r font-semibold tracking-wider shrink-0 capitalize truncate ${
+              !day.hasActiveShifts
+                ? 'bg-slate-950/90 text-amber-400/90 border-slate-700'
+                : day.isWeekend
+                ? 'bg-[#121c2e] text-cyan-300 border-slate-800'
+                : 'bg-[#141e33] text-cyan-400 border-slate-800'
+            }`}
             style={{ width: `${day.width}px` }}
           >
-            {day.label}
+            <span>{day.label}</span>
+            {!day.hasActiveShifts && (
+              <span className="text-[10px] bg-amber-950/80 text-amber-300 px-1.5 py-0.2 rounded border border-amber-800/60 font-mono lowercase">
+                tatil
+              </span>
+            )}
           </div>
         ))}
       </div>
