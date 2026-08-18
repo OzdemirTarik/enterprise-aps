@@ -72,6 +72,8 @@ export const translations = {
     badgeClashTooltip: 'Aynı hatta çakışan işlem: {op}',
     badgeDowntimeClash: 'Bakım Çakışması',
     badgeDowntimeClashTooltip: 'Hat bakım aralığı ile çakışıyor: {reason}',
+    badgeOffShift: 'Vardiya Dışı',
+    badgeOffShiftTooltip: 'Vardiya dışı veya tatil saatine atanmış: {reason}',
     badgeUrgentPriority: 'Acil Sipariş (P{priority})',
 
     // Categories
@@ -389,6 +391,8 @@ export const translations = {
     badgeClashTooltip: 'Machine time clash with: {op}',
     badgeDowntimeClash: 'Maintenance Clash',
     badgeDowntimeClashTooltip: 'Clashes with line maintenance: {reason}',
+    badgeOffShift: 'Off-Shift',
+    badgeOffShiftTooltip: 'Assigned to off-shift or non-working hours: {reason}',
     badgeUrgentPriority: 'Urgent Order (P{priority})',
 
     // Categories

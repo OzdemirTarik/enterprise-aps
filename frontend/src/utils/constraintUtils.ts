@@ -1,4 +1,5 @@
-import { Operation, WorkOrder, ResourceDowntime } from '../types/schedule';
+import { Operation, WorkOrder, ResourceDowntime, ShiftSchedule } from '../types/schedule';
+import { getOffShiftIntervals } from './shiftUtils';
 
 export interface OperationConstraintViolation {
   isLate: boolean;
@@ -9,6 +10,8 @@ export interface OperationConstraintViolation {
   clashingOpName?: string;
   isDowntimeClash: boolean;
   downtimeReason?: string;
+  isOffShiftClash: boolean;
+  offShiftReason?: string;
   isHighPriority: boolean;
   priorityLevel: number;
 }
@@ -19,13 +22,15 @@ export interface OperationConstraintViolation {
  * 2. Precedence Violation (Starting before predecessor finished)
  * 3. Machine Clash (Overlapping operations on same resource)
  * 4. Downtime / Maintenance Clash (Overlapping with planned line maintenance)
- * 5. High / Urgent Priority Order
+ * 5. Off-Shift / Weekend Violation (Scheduled during factory off-hours or holiday)
+ * 6. High / Urgent Priority Order
  */
 export function detectOperationConstraints(
   operation: Operation,
   workOrder: WorkOrder | undefined,
   allOperations: Record<string, Operation> | Operation[],
-  allDowntimes: Record<string, ResourceDowntime> | ResourceDowntime[]
+  allDowntimes: Record<string, ResourceDowntime> | ResourceDowntime[],
+  shifts?: ShiftSchedule[]
 ): OperationConstraintViolation {
   const opsList = Array.isArray(allOperations) ? allOperations : Object.values(allOperations || {});
   const dtsList = Array.isArray(allDowntimes) ? allDowntimes : Object.values(allDowntimes || {});
@@ -96,7 +101,32 @@ export function detectOperationConstraints(
     }
   }
 
-  // 5. Priority Level (Priority >= 8 is High / Urgent, Priority >= 9 is Critical P1)
+  // 5. Off-Shift & Weekend Overlap Check
+  let isOffShiftClash = false;
+  let offShiftReason: string | undefined;
+
+  const activeShifts = (shifts || []).filter((s) => s.isActive);
+  if (activeShifts.length > 0 && !isNaN(opStartMs) && !isNaN(opEndMs)) {
+    const offIntervals = getOffShiftIntervals(
+      activeShifts,
+      new Date(opStartMs),
+      new Date(opEndMs)
+    );
+
+    for (const interval of offIntervals) {
+      const iStartMs = interval.start.getTime();
+      const iEndMs = interval.end.getTime();
+
+      // Overlap: (OpStart < IntervalEnd) && (OpEnd > IntervalStart)
+      if (opStartMs < iEndMs && opEndMs > iStartMs) {
+        isOffShiftClash = true;
+        offShiftReason = interval.label;
+        break;
+      }
+    }
+  }
+
+  // 6. Priority Level (Priority >= 8 is High / Urgent, Priority >= 9 is Critical P1)
   const priority = workOrder?.priority ?? 1;
   const isHighPriority = priority >= 8;
 
@@ -109,6 +139,8 @@ export function detectOperationConstraints(
     clashingOpName,
     isDowntimeClash,
     downtimeReason,
+    isOffShiftClash,
+    offShiftReason,
     isHighPriority,
     priorityLevel: priority,
   };

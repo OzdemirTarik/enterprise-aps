@@ -22,6 +22,7 @@ import {
   CriticalPathResult,
   HeatmapBin,
 } from '../utils/analytics';
+import { getNextAvailableWorkingTime } from '../utils/shiftUtils';
 
 export { computeCriticalPath, computeResourceHeatmap, isResourceMatchingCategory };
 export type { CriticalPathResult, HeatmapBin };
@@ -430,9 +431,12 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   },
 
   rescheduleOptimistic: async (operationId, targetResourceId, targetStartTime) => {
-    const { operations, undoStack, activeLockUser } = get();
+    const { operations, undoStack, activeLockUser, shifts } = get();
     const currentOp = operations[operationId];
     if (!currentOp) return;
+
+    // Shift calendar enforcement: ensure targetStartTime is inside active shift
+    const validStartTime = getNextAvailableWorkingTime(targetStartTime, shifts);
 
     set({
       undoStack: [...undoStack, { operations: { ...operations } }],
@@ -441,8 +445,8 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
 
     const updatedOps = { ...operations };
     const duration = currentOp.durationMinutes;
-    const newStart = targetStartTime.toISOString();
-    const newEnd = new Date(targetStartTime.getTime() + duration * 60000).toISOString();
+    const newStart = validStartTime.toISOString();
+    const newEnd = new Date(validStartTime.getTime() + duration * 60000).toISOString();
 
     updatedOps[operationId] = {
       ...currentOp,

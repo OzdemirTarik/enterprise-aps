@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Operation } from '../../types/schedule';
 import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Lock, Link2, Flame, Magnet, AlertTriangle, AlertOctagon, Zap, Star } from 'lucide-react';
+import { Lock, Link2, Flame, Magnet, AlertTriangle, AlertOctagon, Zap, Star, Clock } from 'lucide-react';
 import { format, isValid, startOfDay } from 'date-fns';
 import { findMagneticSnap, SnapTarget } from '../../utils/magneticSnap';
 import { detectOperationConstraints } from '../../utils/constraintUtils';
@@ -88,8 +88,8 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
             plannedEndTime: new Date(tooltipEndMs).toISOString(),
           };
 
-    return detectOperationConstraints(simulatedOp, parentWorkOrder, operations, downtimes);
-  }, [operation, parentWorkOrder, operations, downtimes, dragOffsetMinutes, tooltipStartMs, tooltipEndMs]);
+    return detectOperationConstraints(simulatedOp, parentWorkOrder, operations, downtimes, shifts);
+  }, [operation, parentWorkOrder, operations, downtimes, shifts, dragOffsetMinutes, tooltipStartMs, tooltipEndMs]);
 
   // Search & Filter matching
   const matchesSearch =
@@ -235,6 +235,8 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     if (isCritical) return 'border-rose-400 ring-2 ring-rose-500 shadow-[0_0_24px_rgba(244,63,94,0.95)] z-40';
     if (constraints.isMachineClash || constraints.isDowntimeClash)
       return 'border-red-500 ring-2 ring-red-500 shadow-[0_0_16px_rgba(239,68,68,0.85)] animate-pulse';
+    if (constraints.isOffShiftClash)
+      return 'border-amber-400 ring-2 ring-amber-500/80 shadow-[0_0_16px_rgba(245,158,11,0.85)] animate-pulse';
     if (constraints.isPrecedenceViolated)
       return 'border-amber-500 ring-2 ring-amber-500 shadow-[0_0_16px_rgba(245,158,11,0.85)]';
     if (constraints.isLate) return 'border-rose-500 ring-1 ring-rose-500/80 shadow-rose-950/60';
@@ -402,6 +404,17 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
               >
                 <Zap className="w-2.5 h-2.5 text-red-400 fill-red-400" />
                 <span>{constraints.isMachineClash ? t('badgeClash') : t('badgeDowntimeClash')}</span>
+              </span>
+            )}
+
+            {/* Off-Shift & Non-Working Hour Clash Badge */}
+            {constraints.isOffShiftClash && (
+              <span
+                className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-amber-950/95 text-amber-200 border border-amber-500/80 text-[9px] font-bold shrink-0 animate-pulse shadow-sm"
+                title={t('badgeOffShiftTooltip').replace('{reason}', constraints.offShiftReason || '')}
+              >
+                <Clock className="w-2.5 h-2.5 text-amber-400" />
+                <span>{t('badgeOffShift')}</span>
               </span>
             )}
 

@@ -32,11 +32,12 @@ public static class DbInitializer
                 await context.Operations.AddRangeAsync(operations);
                 await context.SetupMatrices.AddRangeAsync(setupMatrices);
                 await context.ResourceDowntimes.AddRangeAsync(downtimes);
-                await context.ShiftSchedules.AddRangeAsync(ShiftSchedule.GetDefaultThreeShifts());
+                var defaultShifts = ShiftSchedule.GetDefaultThreeShifts();
+                await context.ShiftSchedules.AddRangeAsync(defaultShifts);
                 await context.SaveChangesAsync();
 
                 logger.LogInformation("Master data successfully seeded into PostgreSQL. Initializing in-memory DAG...");
-                graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes);
+                graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes, defaultShifts);
             }
             else
             {
@@ -53,15 +54,16 @@ public static class DbInitializer
                 var operations = await context.Operations.ToListAsync();
                 var setupMatrices = await context.SetupMatrices.ToListAsync();
                 var downtimes = await context.ResourceDowntimes.ToListAsync();
+                var shifts = await context.ShiftSchedules.ToListAsync();
 
-                graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes);
+                graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes, shifts);
             }
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An error occurred while initializing the database and in-memory graph.");
             var (resources, workOrders, operations, setupMatrices, downtimes) = SeedDemoDataCommandHandler.GenerateIndustrialDemoData();
-            graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes);
+            graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes, ShiftSchedule.GetDefaultThreeShifts());
         }
     }
 }

@@ -207,3 +207,76 @@ export function getOffShiftIntervals(
   return intervals;
 }
 
+/**
+ * Ensures a given timestamp is within active working shifts.
+ * If the timestamp falls in off-shift hours or a non-working day (e.g. Sunday),
+ * it advances to the beginning of the next active working shift (e.g. Monday 08:00).
+ */
+export function getNextAvailableWorkingTime(
+  date: Date,
+  shifts: ShiftSchedule[]
+): Date {
+  const activeShifts = (shifts || []).filter((s) => s.isActive);
+  if (activeShifts.length === 0 || !isValid(date)) return date;
+
+  let cursor = new Date(date.getTime());
+  let maxCheck = 14; // Check up to 14 days ahead
+
+  while (maxCheck-- > 0) {
+    const jsDay = cursor.getDay();
+    const dayOfWeek = jsDay === 0 ? 7 : jsDay;
+
+    const dayShifts = activeShifts
+      .filter((s) => s.daysOfWeek.includes(dayOfWeek))
+      .sort((a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime));
+
+    if (dayShifts.length === 0) {
+      // Entire day is off -> advance to midnight of next day
+      cursor = startOfDay(addDays(cursor, 1));
+      continue;
+    }
+
+    const cursorMinutes = cursor.getHours() * 60 + cursor.getMinutes();
+    let isInsideShift = false;
+    let nextUpcomingShiftStart: number | null = null;
+
+    for (const shift of dayShifts) {
+      const sMin = parseTimeToMinutes(shift.startTime, false);
+      const eMin = parseTimeToMinutes(shift.endTime, true);
+
+      if (cursorMinutes >= sMin && cursorMinutes < eMin) {
+        isInsideShift = true;
+        break;
+      }
+
+      if (cursorMinutes < sMin) {
+        if (nextUpcomingShiftStart === null || sMin < nextUpcomingShiftStart) {
+          nextUpcomingShiftStart = sMin;
+        }
+      }
+    }
+
+    if (isInsideShift) {
+      return cursor;
+    }
+
+    if (nextUpcomingShiftStart !== null) {
+      const result = new Date(
+        cursor.getFullYear(),
+        cursor.getMonth(),
+        cursor.getDate(),
+        Math.floor(nextUpcomingShiftStart / 60),
+        nextUpcomingShiftStart % 60,
+        0,
+        0
+      );
+      return result;
+    }
+
+    // After all shifts on this day -> advance to next day 00:00
+    cursor = startOfDay(addDays(cursor, 1));
+  }
+
+  return date;
+}
+

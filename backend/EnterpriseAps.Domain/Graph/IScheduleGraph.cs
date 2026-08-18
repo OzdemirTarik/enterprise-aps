@@ -9,13 +9,17 @@ public interface IScheduleGraph
         IEnumerable<WorkOrder> workOrders,
         IEnumerable<Operation> operations,
         IEnumerable<SetupMatrixItem> setupMatrices,
-        IEnumerable<ResourceDowntime>? downtimes = null);
+        IEnumerable<ResourceDowntime>? downtimes = null,
+        IEnumerable<ShiftSchedule>? shifts = null);
 
     IReadOnlyList<Resource> GetAllResources();
     IReadOnlyList<Operation> GetAllOperations();
     IReadOnlyList<WorkOrder> GetAllWorkOrders();
     IReadOnlyList<SetupMatrixItem> GetAllSetupMatrices();
     IReadOnlyList<ResourceDowntime> GetAllDowntimes();
+    IReadOnlyList<ShiftSchedule> GetAllShifts();
+
+    void UpdateShifts(IEnumerable<ShiftSchedule> shifts);
 
     Operation? GetOperation(string operationId);
     Resource? GetResource(string resourceId);

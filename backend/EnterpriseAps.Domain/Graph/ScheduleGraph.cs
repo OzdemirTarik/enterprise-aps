@@ -13,6 +13,7 @@ public class ScheduleGraph : IScheduleGraph
     private readonly Dictionary<string, Operation> _operations = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ResourceDowntime> _downtimes = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<(string? ResourceId, string From, string To), int> _setupMatrix = new();
+    private readonly List<ShiftSchedule> _shifts = new();
 
     // Adjacency graph representations for DAG lookups
     private readonly Dictionary<string, HashSet<string>> _directSuccessors = new(StringComparer.OrdinalIgnoreCase);
@@ -23,7 +24,8 @@ public class ScheduleGraph : IScheduleGraph
         IEnumerable<WorkOrder> workOrders,
         IEnumerable<Operation> operations,
         IEnumerable<SetupMatrixItem> setupMatrices,
-        IEnumerable<ResourceDowntime>? downtimes = null)
+        IEnumerable<ResourceDowntime>? downtimes = null,
+        IEnumerable<ShiftSchedule>? shifts = null)
     {
         _lock.EnterWriteLock();
         try
@@ -35,6 +37,12 @@ public class ScheduleGraph : IScheduleGraph
             _setupMatrix.Clear();
             _directSuccessors.Clear();
             _directPredecessors.Clear();
+            _shifts.Clear();
+
+            if (shifts != null)
+            {
+                _shifts.AddRange(shifts);
+            }
 
             foreach (var r in resources)
             {
@@ -155,6 +163,33 @@ public class ScheduleGraph : IScheduleGraph
         finally
         {
             _lock.ExitReadLock();
+        }
+    }
+
+    public IReadOnlyList<ShiftSchedule> GetAllShifts()
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            return _shifts.OrderBy(s => s.DisplayOrder).ToList();
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    public void UpdateShifts(IEnumerable<ShiftSchedule> shifts)
+    {
+        _lock.EnterWriteLock();
+        try
+        {
+            _shifts.Clear();
+            _shifts.AddRange(shifts);
+        }
+        finally
+        {
+            _lock.ExitWriteLock();
         }
     }
 
@@ -288,8 +323,8 @@ public class ScheduleGraph : IScheduleGraph
                 ? earliestPrecedenceAllowed
                 : targetStartTime;
 
-            // 2. Downtime collision evasion
-            effectiveStartTime = EvadeResourceDowntimes(targetResourceId, effectiveStartTime, targetOp.DurationMinutes);
+            // 2. Shift calendar and Downtime collision evasion
+            effectiveStartTime = EvadeOffShiftAndDowntimes(targetResourceId, effectiveStartTime, targetOp.DurationMinutes);
 
             // 3. Update Target Operation
             targetOp.RequiredResourceId = targetResourceId;
@@ -749,19 +784,98 @@ public class ScheduleGraph : IScheduleGraph
         }
     }
 
-    private DateTime EvadeResourceDowntimes(string resourceId, DateTime targetStart, int durationMin)
+    private DateTime GetNextWorkingTime(DateTime time)
     {
-        var activeDts = _downtimes.Values
-            .Where(d => d.ResourceId == resourceId)
-            .OrderBy(d => d.StartTime)
-            .ToList();
+        var activeShifts = _shifts.Where(s => s.IsActive).ToList();
+        if (activeShifts.Count == 0) return time;
 
+        var cursor = time;
+        int maxDaysCheck = 14;
+
+        while (maxDaysCheck-- > 0)
+        {
+            int jsDay = (int)cursor.DayOfWeek;
+            int isoDay = jsDay == 0 ? 7 : jsDay;
+
+            var dayShifts = activeShifts
+                .Where(s => s.DaysOfWeek != null && s.DaysOfWeek.Contains(isoDay))
+                .OrderBy(s => s.StartTime)
+                .ToList();
+
+            if (dayShifts.Count == 0)
+            {
+                // Non-working day (e.g. Sunday) -> advance to next day
+                cursor = cursor.Date.AddDays(1);
+                continue;
+            }
+
+            var cursorTimeOfDay = cursor.TimeOfDay;
+            bool insideAnyShift = false;
+            TimeSpan? earliestUpcomingShiftStart = null;
+
+            foreach (var s in dayShifts)
+            {
+                if (TimeSpan.TryParse(s.StartTime, out var sTime) && TimeSpan.TryParse(s.EndTime, out var eTime))
+                {
+                    if (eTime == TimeSpan.Zero) eTime = TimeSpan.FromHours(24);
+
+                    if (cursorTimeOfDay >= sTime && cursorTimeOfDay < eTime)
+                    {
+                        insideAnyShift = true;
+                        break;
+                    }
+
+                    if (cursorTimeOfDay < sTime)
+                    {
+                        if (!earliestUpcomingShiftStart.HasValue || sTime < earliestUpcomingShiftStart.Value)
+                        {
+                            earliestUpcomingShiftStart = sTime;
+                        }
+                    }
+                }
+            }
+
+            if (insideAnyShift)
+            {
+                return cursor;
+            }
+
+            if (earliestUpcomingShiftStart.HasValue)
+            {
+                return cursor.Date.Add(earliestUpcomingShiftStart.Value);
+            }
+
+            // After last shift of this day -> advance to next day
+            cursor = cursor.Date.AddDays(1);
+        }
+
+        return time;
+    }
+
+    private DateTime EvadeOffShiftAndDowntimes(string resourceId, DateTime targetStart, int durationMin)
+    {
         var currentStart = targetStart;
         bool adjusted = true;
+        int iterations = 0;
 
-        while (adjusted)
+        while (adjusted && iterations++ < 50)
         {
             adjusted = false;
+
+            // 1. Shift calendar evasion
+            var validShiftStart = GetNextWorkingTime(currentStart);
+            if (validShiftStart != currentStart)
+            {
+                currentStart = validShiftStart;
+                adjusted = true;
+            }
+
+            // 2. Resource downtime evasion
+            var activeDts = _downtimes.Values
+                .Where(d => d.ResourceId == resourceId)
+                .OrderBy(d => d.StartTime)
+                .ToList();
+
             var currentEnd = currentStart.AddMinutes(durationMin);
 
             foreach (var dt in activeDts)
@@ -794,7 +908,7 @@ public class ScheduleGraph : IScheduleGraph
             {
                 var nextSetup = GetSetupMinutes(resourceId, current.ProductType, next.ProductType);
                 var nextStart = current.PlannedEndTime;
-                nextStart = EvadeResourceDowntimes(resourceId, nextStart, next.DurationMinutes);
+                nextStart = EvadeOffShiftAndDowntimes(resourceId, nextStart, next.DurationMinutes);
 
                 next.SetupDurationMinutes = nextSetup;
                 next.PlannedStartTime = nextStart;
@@ -817,7 +931,7 @@ public class ScheduleGraph : IScheduleGraph
 
             if (succOp.PlannedStartTime < parentOp.PlannedEndTime)
             {
-                var newStart = EvadeResourceDowntimes(succOp.RequiredResourceId, parentOp.PlannedEndTime, succOp.DurationMinutes);
+                var newStart = EvadeOffShiftAndDowntimes(succOp.RequiredResourceId, parentOp.PlannedEndTime, succOp.DurationMinutes);
                 succOp.PlannedStartTime = newStart;
                 succOp.PlannedEndTime = succOp.PlannedStartTime.AddMinutes(succOp.SetupDurationMinutes + succOp.DurationMinutes);
                 affectedMap[succOp.Id] = succOp;
@@ -882,7 +996,8 @@ public class ScheduleGraph : IScheduleGraph
                 .ThenBy(w => w.DueDate)
                 .ToList();
 
-            var machineTimelines = _resources.Keys.ToDictionary(k => k, _ => DateTime.UtcNow.Date.AddHours(8));
+            var initialTime = GetNextWorkingTime(DateTime.UtcNow.Date.AddHours(8));
+            var machineTimelines = _resources.Keys.ToDictionary(k => k, _ => initialTime);
             var affected = new Dictionary<string, Operation>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var wo in sortedWorkOrders)
@@ -892,20 +1007,20 @@ public class ScheduleGraph : IScheduleGraph
                     .OrderBy(o => o.SequenceIndex)
                     .ToList();
 
-                DateTime currentWoChainTime = wo.ReleaseDate > DateTime.UtcNow.Date.AddHours(8)
+                DateTime currentWoChainTime = wo.ReleaseDate > initialTime
                     ? wo.ReleaseDate
-                    : DateTime.UtcNow.Date.AddHours(8);
+                    : initialTime;
 
                 foreach (var op in woOps)
                 {
                     var machineId = op.RequiredResourceId;
                     if (!machineTimelines.TryGetValue(machineId, out var machineAvailTime))
                     {
-                        machineAvailTime = DateTime.UtcNow.Date.AddHours(8);
+                        machineAvailTime = initialTime;
                     }
 
                     var startTime = machineAvailTime > currentWoChainTime ? machineAvailTime : currentWoChainTime;
-                    startTime = EvadeResourceDowntimes(machineId, startTime, op.DurationMinutes);
+                    startTime = EvadeOffShiftAndDowntimes(machineId, startTime, op.DurationMinutes);
 
                     var prevOpOnMachine = _operations.Values
                         .Where(o => o.RequiredResourceId == machineId && affected.ContainsKey(o.Id) && o.PlannedEndTime <= startTime)

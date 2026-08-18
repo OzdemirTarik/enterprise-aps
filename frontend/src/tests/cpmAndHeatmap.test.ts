@@ -1,5 +1,5 @@
 import { computeCriticalPath, computeResourceHeatmap, isResourceMatchingCategory } from '../utils/analytics';
-import { getOffShiftIntervals } from '../utils/shiftUtils';
+import { getOffShiftIntervals, getNextAvailableWorkingTime } from '../utils/shiftUtils';
 import { findMagneticSnap } from '../utils/magneticSnap';
 import { detectOperationConstraints } from '../utils/constraintUtils';
 import { Operation, WorkOrder, ResourceDowntime } from '../types/schedule';
@@ -394,7 +394,51 @@ function runTests() {
 
   console.log('✅ Real-Time Constraint Violations Test Scenario 6 PASSED.');
 
-  console.log('\nALL 6 ANALYTICS, SHIFT, SNAP & CONSTRAINT UNIT TESTS PASSED!');
+  console.log('\n=== TEST SCENARIO 7: Shift Calendar Enforcement & Off-Shift / Sunday Clash Prevention ===');
+
+  // Test A: Sunday 14:00 (Non-working day) -> should advance to Monday 08:00
+  const sunday14 = new Date('2026-08-23T14:00:00.000Z'); // 2026-08-23 is Sunday
+  const mondayWorking = getNextAvailableWorkingTime(sunday14, sampleShifts);
+  console.log('Sunday 14:00 -> Next Working Time:', mondayWorking.toISOString());
+
+  // Test B: Weekday Night 03:00 (Off-shift gap 00:00-08:00) -> should advance to 08:00 AM
+  const wednesday03 = new Date('2026-08-19T03:00:00.000Z');
+  const wednesdayWorking = getNextAvailableWorkingTime(wednesday03, sampleShifts);
+  console.log('Wednesday 03:00 -> Next Working Time:', wednesdayWorking.toISOString());
+
+  // Test C: Off-Shift Operation Constraint Detection
+  const offShiftOp: Operation = {
+    id: 'op-sunday',
+    workOrderId: 'WO-100',
+    workOrderNumber: 'WO-100',
+    sequenceIndex: 1,
+    name: 'SMT Step on Sunday',
+    productType: 'IoT',
+    requiredResourceId: 'RES-01',
+    plannedStartTime: '2026-08-23T10:00:00.000Z', // Sunday 10:00
+    plannedEndTime: '2026-08-23T12:00:00.000Z',
+    durationMinutes: 120,
+    setupDurationMinutes: 0,
+    status: 'Planned',
+    precedenceOperationIds: [],
+  };
+
+  const sundayConstraints = detectOperationConstraints(
+    offShiftOp,
+    sampleWorkOrder,
+    [offShiftOp],
+    [],
+    sampleShifts
+  );
+
+  console.log('Sunday Operation Constraints:', sundayConstraints);
+  if (!sundayConstraints.isOffShiftClash) {
+    throw new Error('FAILED: Expected isOffShiftClash=true for operation scheduled on Sunday');
+  }
+
+  console.log('✅ Shift Calendar Enforcement Test Scenario 7 PASSED.');
+
+  console.log('\nALL 7 ANALYTICS, SHIFT, SNAP, CONSTRAINT & CALENDAR UNIT TESTS PASSED!');
 }
 
 runTests();

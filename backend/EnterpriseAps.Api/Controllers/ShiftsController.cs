@@ -1,6 +1,7 @@
 using EnterpriseAps.Application.Common.Interfaces;
 using EnterpriseAps.Application.DTOs;
 using EnterpriseAps.Domain.Entities;
+using EnterpriseAps.Domain.Graph;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,11 +13,13 @@ public class ShiftsController : ControllerBase
 {
     private readonly IApplicationDbContext _context;
     private readonly ISchedulingHubClient _hubClient;
+    private readonly IScheduleGraph _graph;
 
-    public ShiftsController(IApplicationDbContext context, ISchedulingHubClient hubClient)
+    public ShiftsController(IApplicationDbContext context, ISchedulingHubClient hubClient, IScheduleGraph graph)
     {
         _context = context;
         _hubClient = hubClient;
+        _graph = graph;
     }
 
     [HttpGet]
@@ -28,6 +31,7 @@ public class ShiftsController : ControllerBase
             shifts = ShiftSchedule.GetDefaultThreeShifts();
             await _context.ShiftSchedules.AddRangeAsync(shifts, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
+            _graph.UpdateShifts(shifts);
         }
 
         return Ok(shifts.Select(MapToDto).ToList());
@@ -58,6 +62,8 @@ public class ShiftsController : ControllerBase
         await _context.ShiftSchedules.AddRangeAsync(newEntities, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
+        _graph.UpdateShifts(newEntities);
+
         var dtos = newEntities.Select(MapToDto).ToList();
         await _hubClient.OnShiftsUpdated(dtos);
 
@@ -86,6 +92,7 @@ public class ShiftsController : ControllerBase
         await _context.SaveChangesAsync(cancellationToken);
 
         var allShifts = await _context.ShiftSchedules.OrderBy(s => s.DisplayOrder).ToListAsync(cancellationToken);
+        _graph.UpdateShifts(allShifts);
         await _hubClient.OnShiftsUpdated(allShifts.Select(MapToDto).ToList());
 
         return CreatedAtAction(nameof(GetShifts), new { id = shift.Id }, MapToDto(shift));
@@ -101,6 +108,7 @@ public class ShiftsController : ControllerBase
         await _context.SaveChangesAsync(cancellationToken);
 
         var allShifts = await _context.ShiftSchedules.OrderBy(s => s.DisplayOrder).ToListAsync(cancellationToken);
+        _graph.UpdateShifts(allShifts);
         await _hubClient.OnShiftsUpdated(allShifts.Select(MapToDto).ToList());
 
         return NoContent();
