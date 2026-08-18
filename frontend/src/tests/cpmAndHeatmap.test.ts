@@ -1,4 +1,5 @@
 import { computeCriticalPath, computeResourceHeatmap, isResourceMatchingCategory } from '../utils/analytics';
+import { getOffShiftIntervals } from '../utils/shiftUtils';
 import { Operation, ResourceDowntime } from '../types/schedule';
 
 function runTests() {
@@ -194,7 +195,47 @@ function runTests() {
   }
   console.log('✅ Dynamic Resource Category Filtering Test Scenario 3 PASSED.');
 
-  console.log('\nALL ANALYTICS & CATEGORY UNIT TESTS PASSED!');
+  console.log('\n=== TEST SCENARIO 4: Shift Shading Off-Interval Calculation & Weekend Merging ===');
+  const sampleShifts = [
+    {
+      id: 'SHIFT-01',
+      name: 'Gündüz',
+      startTime: '08:00',
+      endTime: '16:00',
+      daysOfWeek: [1, 2, 3, 4, 5], // Mon-Fri
+      colorCode: '#06b6d4',
+      isActive: true,
+      displayOrder: 1,
+    },
+    {
+      id: 'SHIFT-02',
+      name: 'Akşam',
+      startTime: '16:00',
+      endTime: '00:00',
+      daysOfWeek: [1, 2, 3, 4, 5], // Mon-Fri
+      colorCode: '#f59e0b',
+      isActive: true,
+      displayOrder: 2,
+    },
+  ];
+
+  // Monday 2026-08-17 00:00 to Tuesday 2026-08-18 23:59
+  const shiftStart = new Date('2026-08-17T00:00:00.000Z');
+  const shiftEnd = new Date('2026-08-18T23:59:59.000Z');
+
+  const offIntervals = getOffShiftIntervals(sampleShifts, shiftStart, shiftEnd);
+  console.log('Off-Shift Intervals count:', offIntervals.length);
+  offIntervals.forEach(interval => {
+    console.log(`- ${interval.label}: ${interval.start.toISOString()} -> ${interval.end.toISOString()}`);
+  });
+
+  if (offIntervals.length === 0) {
+    throw new Error('FAILED: Expected off-shift intervals for 00:00-08:00 night period, got 0');
+  }
+
+  console.log('✅ Shift Shading Off-Interval Test Scenario 4 PASSED.');
+
+  console.log('\nALL ANALYTICS, SHIFT & CATEGORY UNIT TESTS PASSED!');
 }
 
 runTests();

@@ -63,6 +63,8 @@ export const GanttToolbar: React.FC = () => {
   const setIsCriticalPathActive = useScheduleStore((state) => state.setIsCriticalPathActive);
   const isHeatmapActive = useScheduleStore((state) => state.isHeatmapActive);
   const setIsHeatmapActive = useScheduleStore((state) => state.setIsHeatmapActive);
+  const isShiftOverlayActive = useScheduleStore((state) => state.isShiftOverlayActive);
+  const setIsShiftOverlayActive = useScheduleStore((state) => state.setIsShiftOverlayActive);
   const triggerScrollToNow = useScheduleStore((state) => state.triggerScrollToNow);
   const triggerScrollToDate = useScheduleStore((state) => state.triggerScrollToDate);
   const fetchSchedule = useScheduleStore((state) => state.fetchSchedule);
@@ -214,6 +216,20 @@ export const GanttToolbar: React.FC = () => {
         >
           <Activity className="w-3.5 h-3.5" />
           <span>{t('capacityHeatmap')}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsShiftOverlayActive(!isShiftOverlayActive)}
+          className={`flex items-center space-x-1 px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
+            isShiftOverlayActive
+              ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-950 font-bold'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+          }`}
+          title={t('shiftShadingDesc')}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>{t('shiftShading')}</span>
         </button>
 
         {/* Dynamic Critical Path Status Pill */}

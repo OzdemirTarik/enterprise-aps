@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Resource } from '../../types/schedule';
 import { useScheduleStore, computeResourceHeatmap } from '../../store/useScheduleStore';
+import { getOffShiftIntervals } from '../../utils/shiftUtils';
 import { GanttOperationBlock } from './GanttOperationBlock';
 import { GanttDowntimeBlock } from './GanttDowntimeBlock';
 import { format } from 'date-fns';
@@ -18,8 +19,10 @@ export const GanttRow: React.FC<GanttRowProps> = ({
 }) => {
   const operations = useScheduleStore((s) => s.operations);
   const downtimes = useScheduleStore((s) => s.downtimes);
+  const shifts = useScheduleStore((s) => s.shifts);
   const locks = useScheduleStore((s) => s.locks);
   const isHeatmapActive = useScheduleStore((s) => s.isHeatmapActive);
+  const isShiftOverlayActive = useScheduleStore((s) => s.isShiftOverlayActive);
   const timelineStart = useScheduleStore((s) => s.timelineStart);
   const timelineEnd = useScheduleStore((s) => s.timelineEnd);
 
@@ -35,6 +38,12 @@ export const GanttRow: React.FC<GanttRowProps> = ({
 
   const activeLock = locks[resource.id];
   const timelineStartMs = timelineStart.getTime();
+
+  // Compute off-shift / non-working intervals
+  const offShiftIntervals = useMemo(() => {
+    if (!isShiftOverlayActive) return [];
+    return getOffShiftIntervals(shifts, timelineStart, timelineEnd);
+  }, [isShiftOverlayActive, shifts, timelineStart, timelineEnd]);
 
   // Compute 4-hour Heatmap Bins for this resource track
   const heatmapBins = useMemo(() => {
@@ -55,6 +64,51 @@ export const GanttRow: React.FC<GanttRowProps> = ({
       className="relative w-full border-b border-slate-800/60 transition-colors"
       style={{ height: `${rowHeight}px` }}
     >
+      {/* Off-Shift & Non-Working Time Diagonal Shading Background */}
+      {isShiftOverlayActive && offShiftIntervals.length > 0 && (
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+          {offShiftIntervals.map((interval) => {
+            const startMs = interval.start.getTime();
+            const endMs = interval.end.getTime();
+            const left = Math.max(0, ((startMs - timelineStartMs) / 60000) * minuteWidth);
+            const width = Math.max(4, ((endMs - startMs) / 60000) * minuteWidth);
+
+            return (
+              <div
+                key={interval.id}
+                title={`${interval.label}: ${format(interval.start, 'dd.MM HH:mm')} - ${format(interval.end, 'dd.MM HH:mm')}`}
+                className={`absolute top-0 bottom-0 border-r border-slate-800/80 transition-opacity ${
+                  interval.isWeekend ? 'opacity-75' : 'opacity-45'
+                }`}
+                style={{
+                  left: `${left}px`,
+                  width: `${width}px`,
+                  background: interval.isWeekend
+                    ? `repeating-linear-gradient(
+                        -45deg,
+                        rgba(15, 23, 42, 0.95),
+                        rgba(15, 23, 42, 0.95) 8px,
+                        rgba(30, 41, 59, 0.6) 8px,
+                        rgba(30, 41, 59, 0.6) 16px
+                      )`
+                    : `repeating-linear-gradient(
+                        -45deg,
+                        rgba(15, 23, 42, 0.75),
+                        rgba(15, 23, 42, 0.75) 6px,
+                        rgba(30, 41, 59, 0.35) 6px,
+                        rgba(30, 41, 59, 0.35) 12px
+                      )`,
+                }}
+              >
+                <div className="absolute top-1 left-1.5 px-1 py-0.2 rounded bg-slate-900/90 text-[8px] font-mono text-slate-500 border border-slate-800 select-none pointer-events-none">
+                  {interval.isWeekend ? 'Hafta Sonu / Weekend' : 'Vardiya Dışı'}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Active Regional Lock Overlay if locked by another user */}
       {activeLock && (
         <div

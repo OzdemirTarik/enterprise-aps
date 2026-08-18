@@ -52,6 +52,10 @@ export const translations = {
     capacityHeatmap: 'Isı Haritası',
     machineLoad: 'Doluluk',
     chainDraggingTooltip: 'Tüm İş Emri Birlikte Kaydırılıyor',
+    shiftShading: 'Vardiya Taraması',
+    shiftShadingDesc: 'Fabrika vardiya planına göre çalışılmayan saatleri ve hafta sonlarını gösterir',
+    offShiftLabel: 'Vardiya Dışı (Off-Shift)',
+    weekendLabel: 'Hafta Sonu (Tatil)',
 
     // Categories
     allCenters: 'Tüm Merkezler',
@@ -348,6 +352,10 @@ export const translations = {
     capacityHeatmap: 'Heatmap',
     machineLoad: 'Load',
     chainDraggingTooltip: 'Shifting Entire Work Order Chain',
+    shiftShading: 'Shift Shading',
+    shiftShadingDesc: 'Shades off-shift non-working hours and weekends based on shift calendar',
+    offShiftLabel: 'Off-Shift (Non-Working)',
+    weekendLabel: 'Weekend (Off-Time)',
 
     // Categories
     allCenters: 'All Centers',

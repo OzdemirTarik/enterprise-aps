@@ -76,6 +76,7 @@ interface ScheduleStore {
   isChainDragActive: boolean;
   isCriticalPathActive: boolean;
   isHeatmapActive: boolean;
+  isShiftOverlayActive: boolean;
 
   // Viewport Scroll Triggers
   scrollToNowTrigger: number;
@@ -102,6 +103,7 @@ interface ScheduleStore {
   setIsChainDragActive: (active: boolean) => void;
   setIsCriticalPathActive: (active: boolean) => void;
   setIsHeatmapActive: (active: boolean) => void;
+  setIsShiftOverlayActive: (active: boolean) => void;
 
   setContextMenu: (menu: { x: number; y: number; operationId: string } | null) => void;
   setIsCreateWorkOrderOpen: (open: boolean) => void;
@@ -239,6 +241,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   isChainDragActive: false,
   isCriticalPathActive: false,
   isHeatmapActive: false,
+  isShiftOverlayActive: true,
   scrollToNowTrigger: 0,
   scrollToOperationId: null,
   scrollToDateTrigger: null,
@@ -350,6 +353,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   setIsChainDragActive: (active) => set({ isChainDragActive: active }),
   setIsCriticalPathActive: (active) => set({ isCriticalPathActive: active }),
   setIsHeatmapActive: (active) => set({ isHeatmapActive: active }),
+  setIsShiftOverlayActive: (active) => set({ isShiftOverlayActive: active }),
   triggerScrollToNow: () => set((s) => ({ scrollToNowTrigger: s.scrollToNowTrigger + 1 })),
   triggerScrollToOperation: (opId) => set({ scrollToOperationId: opId }),
   triggerScrollToDate: (date) => set({ scrollToDateTrigger: date }),
