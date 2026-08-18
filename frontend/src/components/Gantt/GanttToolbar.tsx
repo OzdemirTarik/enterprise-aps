@@ -24,6 +24,7 @@ import {
   Link2,
   Flame,
   Calendar,
+  Magnet,
 } from 'lucide-react';
 
 export const GanttToolbar: React.FC = () => {
@@ -65,6 +66,8 @@ export const GanttToolbar: React.FC = () => {
   const setIsHeatmapActive = useScheduleStore((state) => state.setIsHeatmapActive);
   const isShiftOverlayActive = useScheduleStore((state) => state.isShiftOverlayActive);
   const setIsShiftOverlayActive = useScheduleStore((state) => state.setIsShiftOverlayActive);
+  const isMagneticSnapActive = useScheduleStore((state) => state.isMagneticSnapActive);
+  const setIsMagneticSnapActive = useScheduleStore((state) => state.setIsMagneticSnapActive);
   const triggerScrollToNow = useScheduleStore((state) => state.triggerScrollToNow);
   const triggerScrollToDate = useScheduleStore((state) => state.triggerScrollToDate);
   const fetchSchedule = useScheduleStore((state) => state.fetchSchedule);
@@ -230,6 +233,20 @@ export const GanttToolbar: React.FC = () => {
         >
           <Clock className="w-3.5 h-3.5" />
           <span>{t('shiftShading')}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsMagneticSnapActive(!isMagneticSnapActive)}
+          className={`flex items-center space-x-1 px-2.5 py-1 rounded text-[11px] font-medium border transition-colors ${
+            isMagneticSnapActive
+              ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm shadow-cyan-950 font-bold'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+          }`}
+          title={t('magneticSnapDesc')}
+        >
+          <Magnet className="w-3.5 h-3.5" />
+          <span>{t('magneticSnap')}</span>
         </button>
 
         {/* Dynamic Critical Path Status Pill */}

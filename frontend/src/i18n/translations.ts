@@ -56,6 +56,14 @@ export const translations = {
     shiftShadingDesc: 'Fabrika vardiya planına göre çalışılmayan saatleri ve hafta sonlarını gösterir',
     offShiftLabel: 'Vardiya Dışı (Off-Shift)',
     weekendLabel: 'Hafta Sonu (Tatil)',
+    magneticSnap: 'Manyetik Yapışma',
+    magneticSnapDesc: 'Komşu operasyonlara, öncüllere ve vardiya sınırlarına otomatik akıllı yapışma (Geçici devre dışı bırakmak için Alt basılı tutun)',
+    snappedToNeighborLeft: 'Sol Komşu Bitişine Yapıştı (0 Boşluk)',
+    snappedToNeighborRight: 'Sağ Komşu Başlangıcına Yapıştı',
+    snappedToPredecessor: 'Öncül İşlem Bitişine Yapıştı',
+    snappedToSuccessor: 'Ardıl İşlem Başlangıcına Yapıştı',
+    snappedToShiftStart: 'Vardiya Başlangıcına Yapıştı',
+    snappedToShiftEnd: 'Vardiya Bitişine Yapıştı',
 
     // Categories
     allCenters: 'Tüm Merkezler',
@@ -356,6 +364,14 @@ export const translations = {
     shiftShadingDesc: 'Shades off-shift non-working hours and weekends based on shift calendar',
     offShiftLabel: 'Off-Shift (Non-Working)',
     weekendLabel: 'Weekend (Off-Time)',
+    magneticSnap: 'Magnetic Snap',
+    magneticSnapDesc: 'Smart zero-gap snapping to neighbor operations, dependencies, and shift boundaries (Hold Alt to bypass)',
+    snappedToNeighborLeft: 'Snapped to Left Neighbor (Zero-Gap)',
+    snappedToNeighborRight: 'Snapped to Right Neighbor',
+    snappedToPredecessor: 'Snapped to Predecessor End',
+    snappedToSuccessor: 'Snapped to Successor Start',
+    snappedToShiftStart: 'Snapped to Shift Start',
+    snappedToShiftEnd: 'Snapped to Shift End',
 
     // Categories
     allCenters: 'All Centers',

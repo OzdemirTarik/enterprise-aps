@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Operation } from '../../types/schedule';
 import { useScheduleStore, computeCriticalPath } from '../../store/useScheduleStore';
 import { useTranslation } from '../../i18n/useTranslation';
-import { Lock, Link2, Flame } from 'lucide-react';
+import { Lock, Link2, Flame, Magnet } from 'lucide-react';
 import { format, isValid, startOfDay } from 'date-fns';
+import { findMagneticSnap, SnapTarget } from '../../utils/magneticSnap';
 
 interface GanttOperationBlockProps {
   operation: Operation;
@@ -32,6 +33,8 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   const statusFilter = useScheduleStore((s) => s.statusFilter);
   const isChainDragActive = useScheduleStore((s) => s.isChainDragActive);
   const isCriticalPathActive = useScheduleStore((s) => s.isCriticalPathActive);
+  const isMagneticSnapActive = useScheduleStore((s) => s.isMagneticSnapActive);
+  const shifts = useScheduleStore((s) => s.shifts);
   const operations = useScheduleStore((s) => s.operations);
   const workOrders = useScheduleStore((s) => s.workOrders);
 
@@ -40,6 +43,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
   const [dragOffsetMinutes, setDragOffsetMinutes] = useState(0);
   const [resizeDeltaMinutes, setResizeDeltaMinutes] = useState(0);
   const [isShiftPressedWhileDragging, setIsShiftPressedWhileDragging] = useState(false);
+  const [activeSnapTarget, setActiveSnapTarget] = useState<SnapTarget | null>(null);
 
   const startMs = new Date(operation.plannedStartTime).getTime();
   const timelineStartMs = timelineStart.getTime();
@@ -103,9 +107,32 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaPx = moveEvent.clientX - startClientX;
       const rawDeltaMin = deltaPx / minuteWidth;
-      const snappedDeltaMin = Math.round(rawDeltaMin / 15) * 15;
-      currentOffsetMin = snappedDeltaMin;
-      setDragOffsetMinutes(snappedDeltaMin);
+      const rawProposedStartMin = baseStartMinutes + rawDeltaMin;
+      const totalDurMin = operation.setupDurationMinutes + effectiveDuration;
+
+      const shouldApplyMagneticSnap = isMagneticSnapActive && !moveEvent.altKey;
+
+      if (shouldApplyMagneticSnap) {
+        const snapResult = findMagneticSnap({
+          proposedStartMinutes: rawProposedStartMin,
+          totalDurationMinutes: totalDurMin,
+          currentOp: operation,
+          allOperations: Object.values(operations),
+          shifts,
+          timelineStart,
+          minuteWidth,
+        });
+
+        const effectiveDelta = snapResult.snappedStartMinutes - baseStartMinutes;
+        currentOffsetMin = effectiveDelta;
+        setDragOffsetMinutes(effectiveDelta);
+        setActiveSnapTarget(snapResult.snapTarget);
+      } else {
+        const snappedDeltaMin = Math.round(rawDeltaMin / 5) * 5;
+        currentOffsetMin = snappedDeltaMin;
+        setDragOffsetMinutes(snappedDeltaMin);
+        setActiveSnapTarget(null);
+      }
 
       if (moveEvent.shiftKey || isChainDragActive) {
         setIsShiftPressedWhileDragging(true);
@@ -116,6 +143,7 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       setIsDragging(false);
+      setActiveSnapTarget(null);
 
       if (currentOffsetMin !== 0) {
         if (isGroupMode) {
@@ -218,6 +246,23 @@ export const GanttOperationBlock: React.FC<GanttOperationBlockProps> = ({
         backgroundColor: '#0f172a',
       }}
     >
+      {/* Magnetic Snap Visual Guide Line & Badge */}
+      {isDragging && activeSnapTarget && (
+        <div
+          className="absolute -top-14 -bottom-14 pointer-events-none z-50 flex flex-col items-center"
+          style={{
+            left: `${(activeSnapTarget.guideLineMinutes - effectiveStartMinutes) * minuteWidth}px`,
+          }}
+        >
+          <div className="w-0.5 h-full bg-cyan-400 shadow-[0_0_12px_rgba(6,182,212,1)]" />
+          <div className="absolute -top-7 px-2.5 py-0.5 rounded bg-slate-950 text-cyan-300 border border-cyan-400/90 shadow-2xl text-[10px] font-mono whitespace-nowrap flex items-center gap-1.5 backdrop-blur-md">
+            <Magnet className="w-3 h-3 text-cyan-400 animate-bounce shrink-0" />
+            <span>{t(activeSnapTarget.labelKey as any)}:</span>
+            <strong className="text-white font-bold">{activeSnapTarget.detail}</strong>
+          </div>
+        </div>
+      )}
+
       {/* Real-time Floating Drag / Resize Micro-Tooltip */}
       {(isDragging || isResizingRight) && (
         <div className="absolute -top-11 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-cyan-400 rounded-md px-2.5 py-1 text-[11px] font-mono text-cyan-300 shadow-2xl pointer-events-none flex flex-col items-center gap-0.5 whitespace-nowrap backdrop-blur-md">

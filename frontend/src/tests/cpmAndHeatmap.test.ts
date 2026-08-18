@@ -1,5 +1,6 @@
 import { computeCriticalPath, computeResourceHeatmap, isResourceMatchingCategory } from '../utils/analytics';
 import { getOffShiftIntervals } from '../utils/shiftUtils';
+import { findMagneticSnap } from '../utils/magneticSnap';
 import { Operation, ResourceDowntime } from '../types/schedule';
 
 function runTests() {
@@ -235,7 +236,88 @@ function runTests() {
 
   console.log('✅ Shift Shading Off-Interval Test Scenario 4 PASSED.');
 
-  console.log('\nALL ANALYTICS, SHIFT & CATEGORY UNIT TESTS PASSED!');
+  console.log('\n=== TEST SCENARIO 5: Smart Magnetic Snapping (Left/Right Neighbor Zero-Gap, Predecessor, Shift) ===');
+  const tRefStart = new Date('2026-08-17T00:00:00.000Z');
+  
+  // Op1 on RES-01: 08:00 to 10:00 (480 min to 600 min from tRefStart)
+  const op1: Operation = {
+    id: 'op-1',
+    workOrderId: 'WO-1',
+    workOrderNumber: 'WO-101',
+    sequenceIndex: 1,
+    name: 'SMT Step 1',
+    productType: 'IoT',
+    requiredResourceId: 'RES-01',
+    plannedStartTime: '2026-08-17T08:00:00.000Z',
+    plannedEndTime: '2026-08-17T10:00:00.000Z',
+    durationMinutes: 120,
+    setupDurationMinutes: 0,
+    status: 'Planned',
+    isLocked: false,
+    colorCode: '#3b82f6',
+    precedenceOperationIds: [],
+  };
+
+  // Op2 on RES-01 (being dragged near 10:07, duration 60m): should snap to 10:00 (600 min) with zero gap!
+  const op2: Operation = {
+    id: 'op-2',
+    workOrderId: 'WO-2',
+    workOrderNumber: 'WO-202',
+    sequenceIndex: 1,
+    name: 'SMT Step 2',
+    productType: 'IoT',
+    requiredResourceId: 'RES-01',
+    plannedStartTime: '2026-08-17T11:00:00.000Z',
+    plannedEndTime: '2026-08-17T12:00:00.000Z',
+    durationMinutes: 60,
+    setupDurationMinutes: 0,
+    status: 'Planned',
+    isLocked: false,
+    colorCode: '#10b981',
+    precedenceOperationIds: [],
+  };
+
+  // Test 1: Sol Komşu Bitişi Snap (Proposed 608 min -> should snap to 600 min)
+  const snapResult1 = findMagneticSnap({
+    proposedStartMinutes: 608,
+    totalDurationMinutes: 60,
+    currentOp: op2,
+    allOperations: [op1, op2],
+    shifts: sampleShifts,
+    timelineStart: tRefStart,
+    minuteWidth: 1.2,
+  });
+
+  console.log('Magnetic Snap 1 (Neighbor Left):', snapResult1);
+  if (snapResult1.snappedStartMinutes !== 600) {
+    throw new Error(`FAILED: Expected snap to 600 (Op1 end), got ${snapResult1.snappedStartMinutes}`);
+  }
+  if (snapResult1.snapTarget?.type !== 'neighbor-left') {
+    throw new Error(`FAILED: Expected snap type neighbor-left, got ${snapResult1.snapTarget?.type}`);
+  }
+
+  // Test 2: Shift Start Snap (Proposed 485 min -> should snap to 480 min / 08:00)
+  const snapResult2 = findMagneticSnap({
+    proposedStartMinutes: 485,
+    totalDurationMinutes: 60,
+    currentOp: op2,
+    allOperations: [op2], // no neighbor ops
+    shifts: sampleShifts,
+    timelineStart: tRefStart,
+    minuteWidth: 1.2,
+  });
+
+  console.log('Magnetic Snap 2 (Shift Start):', snapResult2);
+  if (snapResult2.snappedStartMinutes !== 480) {
+    throw new Error(`FAILED: Expected snap to 480 (Shift start 08:00), got ${snapResult2.snappedStartMinutes}`);
+  }
+  if (snapResult2.snapTarget?.type !== 'shift-start') {
+    throw new Error(`FAILED: Expected snap type shift-start, got ${snapResult2.snapTarget?.type}`);
+  }
+
+  console.log('✅ Smart Magnetic Snapping Test Scenario 5 PASSED.');
+
+  console.log('\nALL ANALYTICS, SHIFT, SNAP & CATEGORY UNIT TESTS PASSED!');
 }
 
 runTests();
