@@ -31,7 +31,10 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     throw new Error(errorMsg);
   }
 
-  return res.json();
+  const text = await res.text();
+  // Strip 'Z' from all ISO date strings so the browser parses them as Local Time
+  const localText = text.replace(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)Z/g, '$1');
+  return JSON.parse(localText);
 }
 
 export const scheduleApi = {
@@ -96,20 +99,24 @@ export const scheduleApi = {
   rescheduleOperation: (
     operationId: string,
     targetResourceId: string,
-    targetStartTime: string,
+    targetStartTime: string | Date,
     autoCascade = true,
-    userId?: string
-  ): Promise<ScheduleDelta> =>
-    request<ScheduleDelta>(`/operations/${operationId}/reschedule`, {
+  ): Promise<ScheduleDelta> => {
+    let timeStr = targetStartTime as string;
+    if (targetStartTime instanceof Date) {
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      timeStr = `${targetStartTime.getFullYear()}-${pad(targetStartTime.getMonth() + 1)}-${pad(targetStartTime.getDate())}T${pad(targetStartTime.getHours())}:${pad(targetStartTime.getMinutes())}:${pad(targetStartTime.getSeconds())}.000Z`;
+    }
+    return request<ScheduleDelta>(`/operations/${operationId}/reschedule`, {
       method: 'POST',
       body: JSON.stringify({
         operationId,
         targetResourceId,
-        targetStartTime,
+        targetStartTime: timeStr,
         autoCascade,
-        userId,
       }),
-    }),
+    });
+  },
 
   resizeOperation: (operationId: string, newDurationMinutes: number): Promise<ScheduleDelta> =>
     request<ScheduleDelta>(`/operations/${operationId}/resize`, {

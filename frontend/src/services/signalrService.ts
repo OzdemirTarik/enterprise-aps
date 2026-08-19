@@ -77,8 +77,15 @@ class SignalRService {
   private registerHandlers(): void {
     if (!this.connection) return;
 
+    const localize = <T>(data: T): T => {
+      if (!data) return data;
+      const str = JSON.stringify(data);
+      const localStr = str.replace(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)Z/g, '$1');
+      return JSON.parse(localStr) as T;
+    };
+
     this.connection.on('OnScheduleUpdated', (delta: ScheduleDelta) => {
-      useScheduleStore.getState().mergeScheduleDelta(delta);
+      useScheduleStore.getState().mergeScheduleDelta(localize(delta));
     });
 
     this.connection.on('OnResourceLocked', (lockInfo: LockInfo) => {
@@ -98,7 +105,7 @@ class SignalRService {
     });
 
     this.connection.on('OnResourceUpdated', (resource: Resource) => {
-      useScheduleStore.getState().setResourceUpdated(resource);
+      useScheduleStore.getState().setResourceUpdated(localize(resource));
     });
 
     this.connection.on('OnResourceDeleted', (resourceId: string) => {
@@ -106,7 +113,7 @@ class SignalRService {
     });
 
     this.connection.on('OnWorkOrderUpdated', (workOrder: WorkOrder) => {
-      useScheduleStore.getState().setWorkOrderUpdated(workOrder);
+      useScheduleStore.getState().setWorkOrderUpdated(localize(workOrder));
     });
 
     this.connection.on('OnWorkOrderDeleted', (workOrderId: string) => {
@@ -114,15 +121,19 @@ class SignalRService {
     });
 
     this.connection.on('OnOperationDeleted', (operationId: string) => {
-      useScheduleStore.getState().deleteOperation(operationId);
+      useScheduleStore.getState().setOperationDeleted(operationId);
     });
 
     this.connection.on('OnDowntimeUpdated', (downtime: ResourceDowntime) => {
-      useScheduleStore.getState().setDowntimeUpdated(downtime);
+      useScheduleStore.getState().setDowntimeUpdated(localize(downtime));
     });
 
     this.connection.on('OnDowntimeDeleted', (downtimeId: string) => {
       useScheduleStore.getState().setDowntimeDeleted(downtimeId);
+    });
+
+    this.connection.on('OnFullScheduleReloaded', () => {
+      useScheduleStore.getState().fetchSchedule();
     });
 
     this.connection.on('OnShiftsUpdated', (shifts: any) => {

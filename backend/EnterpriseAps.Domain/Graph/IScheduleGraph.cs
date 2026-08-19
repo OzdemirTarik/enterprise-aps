@@ -18,6 +18,8 @@ public interface IScheduleGraph
     IReadOnlyList<SetupMatrixItem> GetAllSetupMatrices();
     IReadOnlyList<ResourceDowntime> GetAllDowntimes();
     IReadOnlyList<ShiftSchedule> GetAllShifts();
+    DateTime GetNextWorkingTime(DateTime time);
+    DateTime CalculateWorkingEndTime(DateTime start, int durationMin);
 
     void UpdateShifts(IEnumerable<ShiftSchedule> shifts);
 

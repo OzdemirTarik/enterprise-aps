@@ -45,8 +45,8 @@ public class UpdateOperationCommandHandler : IRequestHandler<UpdateOperationComm
         op.RequiredResourceId = request.RequiredResourceId;
         op.DurationMinutes = request.DurationMinutes;
         op.SetupDurationMinutes = request.SetupDurationMinutes;
-        op.PlannedStartTime = request.PlannedStartTime;
-        op.PlannedEndTime = request.PlannedStartTime.AddMinutes(request.SetupDurationMinutes + request.DurationMinutes);
+        op.PlannedStartTime = _graph.GetNextWorkingTime(request.PlannedStartTime);
+        op.PlannedEndTime = _graph.CalculateWorkingEndTime(op.PlannedStartTime, request.SetupDurationMinutes + request.DurationMinutes);
         if (Enum.TryParse<OperationStatus>(request.Status, true, out var parsedStatus))
         {
             op.Status = parsedStatus;

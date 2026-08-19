@@ -48,8 +48,8 @@ public class CreateOperationCommandHandler : IRequestHandler<CreateOperationComm
             RequiredResourceId = request.RequiredResourceId,
             DurationMinutes = request.DurationMinutes,
             SetupDurationMinutes = request.SetupDurationMinutes,
-            PlannedStartTime = request.PlannedStartTime,
-            PlannedEndTime = request.PlannedStartTime.AddMinutes(request.SetupDurationMinutes + request.DurationMinutes),
+            PlannedStartTime = _graph.GetNextWorkingTime(request.PlannedStartTime),
+            PlannedEndTime = _graph.CalculateWorkingEndTime(_graph.GetNextWorkingTime(request.PlannedStartTime), request.SetupDurationMinutes + request.DurationMinutes),
             Status = OperationStatus.Planned,
             ColorCode = request.ColorCode,
             PrecedenceOperationIds = request.PrecedenceOperationIds ?? new List<string>()

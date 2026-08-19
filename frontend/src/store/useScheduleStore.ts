@@ -391,8 +391,14 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
       const curStartMs = new Date(op.plannedStartTime).getTime();
       const newStartMs = curStartMs + deltaMinutes * 60000;
       const durationMs = (op.setupDurationMinutes + op.durationMinutes) * 60000;
-      const newStartStr = new Date(newStartMs).toISOString();
-      const newEndStr = new Date(newStartMs + durationMs).toISOString();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const formatLocalIso = (ms: number) => {
+        const d = new Date(ms);
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.000Z`;
+      };
+      
+      const newStartStr = formatLocalIso(newStartMs);
+      const newEndStr = formatLocalIso(newStartMs + durationMs);
 
       updatedOps[op.id] = {
         ...op,
@@ -445,8 +451,14 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
 
     const updatedOps = { ...operations };
     const duration = currentOp.durationMinutes;
-    const newStart = validStartTime.toISOString();
-    const newEnd = new Date(validStartTime.getTime() + duration * 60000).toISOString();
+    
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const formatLocalIso = (d: Date) => {
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.000Z`;
+    };
+
+    const newStart = formatLocalIso(validStartTime);
+    const newEnd = formatLocalIso(new Date(validStartTime.getTime() + duration * 60000));
 
     updatedOps[operationId] = {
       ...currentOp,

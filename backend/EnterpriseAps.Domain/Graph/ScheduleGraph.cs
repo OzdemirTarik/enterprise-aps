@@ -390,7 +390,10 @@ public class ScheduleGraph : IScheduleGraph
 
             var affectedMap = new Dictionary<string, Operation>(StringComparer.OrdinalIgnoreCase);
             targetOp.DurationMinutes = newDurationMinutes;
-            targetOp.PlannedEndTime = targetOp.PlannedStartTime.AddMinutes(targetOp.SetupDurationMinutes + targetOp.DurationMinutes);
+            var totalDur = targetOp.SetupDurationMinutes + targetOp.DurationMinutes;
+            var (validStart, validEnd) = EvadeOffShiftAndDowntimesWithEnd(targetOp.RequiredResourceId, targetOp.PlannedStartTime, totalDur);
+            targetOp.PlannedStartTime = validStart;
+            targetOp.PlannedEndTime = validEnd;
             affectedMap[targetOp.Id] = targetOp;
 
             if (autoCascade)
@@ -984,6 +987,7 @@ public class ScheduleGraph : IScheduleGraph
         var machineOps = _operations.Values
             .Where(o => o.RequiredResourceId == resourceId)
             .OrderBy(o => o.PlannedStartTime)
+            .ThenByDescending(o => affectedMap.ContainsKey(o.Id) ? 1 : 0)
             .ToList();
 
         for (int i = 0; i < machineOps.Count - 1; i++)
@@ -1051,7 +1055,7 @@ public class ScheduleGraph : IScheduleGraph
                     var prev = ops[i - 1];
                     current.SetupDurationMinutes = GetSetupMinutes(resource.Id, prev.ProductType, current.ProductType);
                 }
-                current.PlannedEndTime = current.PlannedStartTime.AddMinutes(current.SetupDurationMinutes + current.DurationMinutes);
+                current.PlannedEndTime = CalculateWorkingEndTime(current.PlannedStartTime, current.SetupDurationMinutes + current.DurationMinutes);
             }
         }
     }
