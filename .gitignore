@@ -27,3 +27,8 @@ Thumbs.db
 # Database & runtime
 postgres_data/
 redis_data/
+
+# Obsidian runtime workspace & cache
+knowledge/.obsidian/workspace*.json
+knowledge/.obsidian/cache/
+

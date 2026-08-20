@@ -52,6 +52,7 @@ interface ScheduleStore {
   hoveredOperationId: string | null;
   activeLockUser: { userId: string; userName: string; userColor: string };
   isLoading: boolean;
+  isInitialized: boolean;
   error: string | null;
 
   // Filters & Search
@@ -182,6 +183,7 @@ interface ScheduleStore {
 
   setResourceUpdated: (resource: Resource) => void;
   setResourceDeleted: (resourceId: string) => void;
+  setOperationDeleted: (operationId: string) => void;
   setWorkOrderUpdated: (workOrder: WorkOrder) => void;
   setWorkOrderDeleted: (workOrderId: string) => void;
   setDowntimeUpdated: (downtime: ResourceDowntime) => void;
@@ -207,8 +209,21 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     (typeof window !== 'undefined' &&
       (localStorage.getItem('aps_zoom') as 'hour' | 'day' | 'week' | 'month')) ||
     'day',
-  timelineStart: new Date(new Date().setHours(6, 0, 0, 0)),
-  timelineEnd: new Date(new Date().setDate(new Date().getDate() + 3)),
+  timelineStart: startOfDay(new Date(Date.now() - 12 * 3600 * 1000)),
+  timelineEnd: new Date(
+    startOfDay(new Date(Date.now() - 12 * 3600 * 1000)).getTime() +
+      (((typeof window !== 'undefined' &&
+        (localStorage.getItem('aps_zoom') as 'hour' | 'day' | 'week' | 'month')) ||
+        'day') === 'month'
+        ? 32
+        : ((typeof window !== 'undefined' &&
+            (localStorage.getItem('aps_zoom') as 'hour' | 'day' | 'week' | 'month')) ||
+            'day') === 'week'
+        ? 14
+        : 7) *
+        86400 *
+        1000
+  ),
   selectedOperationId: null,
   selectedResourceId: null,
   hoveredOperationId: null,
@@ -220,6 +235,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     ],
   },
   isLoading: false,
+  isInitialized: false,
   error: null,
 
   searchQuery: '',
@@ -291,6 +307,15 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         }
       }
 
+      // Guarantee minimum days span according to current zoom level (at least 32 days for month view)
+      const currentZoom = get().zoomLevel;
+      const minDays =
+        currentZoom === 'month' ? 32 : currentZoom === 'week' ? 14 : currentZoom === 'day' ? 7 : 4;
+      const minSpanMs = minDays * 86400 * 1000;
+      if (tEnd.getTime() - tStart.getTime() < minSpanMs) {
+        tEnd = new Date(tStart.getTime() + minSpanMs);
+      }
+
       set({
         resources: resourcesMap,
         operations: operationsMap,
@@ -303,10 +328,11 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         timelineStart: tStart,
         timelineEnd: tEnd,
         isLoading: false,
+        isInitialized: true,
       });
     } catch (err: any) {
       console.error('[fetchSchedule Error]', err);
-      set({ error: err.message || 'Failed to fetch schedule', isLoading: false });
+      set({ error: err.message || 'Failed to fetch schedule', isLoading: false, isInitialized: true });
     }
   },
 
@@ -315,20 +341,20 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   setHoveredOperationId: (id) => set({ hoveredOperationId: id }),
   setZoomLevel: (level) => {
     const { timelineStart, timelineEnd } = get();
-    if (level === 'month') {
-      const startMs = timelineStart.getTime();
-      const currentDays = (timelineEnd.getTime() - startMs) / 86400000;
-      if (currentDays < 30) {
-        if (typeof window !== 'undefined') localStorage.setItem('aps_zoom', level);
-        set({
-          zoomLevel: level,
-          timelineEnd: new Date(startMs + 32 * 86400000),
-        });
-        return;
-      }
-    }
+    const startMs = timelineStart.getTime();
+    const minDays = level === 'month' ? 32 : level === 'week' ? 14 : level === 'day' ? 7 : 4;
+    const minEndMs = startMs + minDays * 86400000;
+
     if (typeof window !== 'undefined') localStorage.setItem('aps_zoom', level);
-    set({ zoomLevel: level });
+
+    if (timelineEnd.getTime() < minEndMs) {
+      set({
+        zoomLevel: level,
+        timelineEnd: new Date(minEndMs),
+      });
+    } else {
+      set({ zoomLevel: level });
+    }
   },
   setSearchQuery: (query) => set({ searchQuery: query }),
   setWorkOrderFilter: (id) => set({ workOrderFilter: id }),
@@ -375,7 +401,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   },
 
   rescheduleWorkOrderChain: async (workOrderId, deltaMinutes) => {
-    const { operations, undoStack, activeLockUser } = get();
+    const { operations, undoStack } = get();
     const woOps = Object.values(operations).filter((o) => o.workOrderId === workOrderId);
     if (woOps.length === 0 || deltaMinutes === 0) return;
 
@@ -423,8 +449,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
           s.id,
           s.resourceId,
           s.newStart,
-          isLast,
-          activeLockUser.userId
+          isLast
         );
         if (isLast && delta) {
           get().mergeScheduleDelta(delta);
@@ -437,7 +462,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
   },
 
   rescheduleOptimistic: async (operationId, targetResourceId, targetStartTime) => {
-    const { operations, undoStack, activeLockUser, shifts } = get();
+    const { operations, undoStack, shifts } = get();
     const currentOp = operations[operationId];
     if (!currentOp) return;
 
@@ -474,8 +499,7 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
         operationId,
         targetResourceId,
         newStart,
-        true,
-        activeLockUser.userId
+        true
       );
       get().mergeScheduleDelta(delta);
     } catch (err) {
@@ -647,6 +671,16 @@ export const useScheduleStore = create<ScheduleStore>((set, get) => ({
     const resources = { ...get().resources };
     delete resources[resourceId];
     set({ resources });
+  },
+
+  setOperationDeleted: (operationId) => {
+    const updatedOps = { ...get().operations };
+    delete updatedOps[operationId];
+    set({
+      operations: updatedOps,
+      selectedOperationId:
+        get().selectedOperationId === operationId ? null : get().selectedOperationId,
+    });
   },
 
   setWorkOrderUpdated: (workOrder) => {

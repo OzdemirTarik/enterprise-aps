@@ -6,11 +6,13 @@ import { Operation } from '../../types/schedule';
 interface GanttDependencyOverlayProps {
   minuteWidth: number;
   rowHeight: number;
+  canvasWidth?: number;
 }
 
 export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
   minuteWidth,
   rowHeight,
+  canvasWidth,
 }) => {
   const resources = useScheduleStore((state) => state.resources);
   const operations = useScheduleStore((state) => state.operations);
@@ -117,13 +119,13 @@ export const GanttDependencyOverlay: React.FC<GanttDependencyOverlayProps> = ({
   ]);
 
   const totalMinutes = (timelineEnd.getTime() - timelineStart.getTime()) / 60000;
-  const totalWidth = Math.max(1200, totalMinutes * minuteWidth);
+  const svgWidth = canvasWidth ?? (totalMinutes * minuteWidth);
   const totalHeight = resourceList.length * rowHeight;
 
   return (
     <svg
       className="absolute inset-0 pointer-events-none z-20"
-      style={{ width: `${totalWidth}px`, height: `${totalHeight}px` }}
+      style={{ width: `${svgWidth}px`, height: `${totalHeight}px` }}
     >
       <defs>
         {/* Normal Arrowhead */}

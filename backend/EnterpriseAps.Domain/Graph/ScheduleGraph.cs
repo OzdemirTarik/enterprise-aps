@@ -533,6 +533,18 @@ public class ScheduleGraph : IScheduleGraph
         _lock.EnterWriteLock();
         try
         {
+            if (WouldCreateCycleInternal(operation.Id, operation.PrecedenceOperationIds))
+            {
+                return new ScheduleDelta
+                {
+                    TriggeredByOperationId = operation.Id,
+                    AffectedOperations = new List<Operation>(),
+                    Timestamp = DateTime.UtcNow,
+                    Success = false,
+                    ErrorMessage = $"Döngüsel bağımlılık tespit edildi: Operasyon '{operation.Id}' için döngü oluşturan öncül bağımlılık eklenemez."
+                };
+            }
+
             _operations[operation.Id] = operation.Clone();
 
             if (!_directSuccessors.ContainsKey(operation.Id))
@@ -1227,6 +1239,56 @@ public class ScheduleGraph : IScheduleGraph
         {
             _lock.ExitReadLock();
         }
+    }
+
+    public bool WouldCreateCycle(string operationId, IEnumerable<string> candidatePredecessors)
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            return WouldCreateCycleInternal(operationId, candidatePredecessors);
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    private bool WouldCreateCycleInternal(string operationId, IEnumerable<string> candidatePredecessors)
+    {
+        if (candidatePredecessors == null)
+            return false;
+
+        foreach (var predId in candidatePredecessors)
+        {
+            if (string.Equals(predId, operationId, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var queue = new Queue<string>();
+            queue.Enqueue(predId);
+            visited.Add(predId);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (string.Equals(current, operationId, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (_directPredecessors.TryGetValue(current, out var preds))
+                {
+                    foreach (var p in preds)
+                    {
+                        if (visited.Add(p))
+                        {
+                            queue.Enqueue(p);
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public void ResetToInitial(

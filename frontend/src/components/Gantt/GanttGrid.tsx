@@ -1,73 +1,86 @@
 import React from 'react';
 import { useScheduleStore } from '../../store/useScheduleStore';
-import { differenceInHours, addHours } from 'date-fns';
+import { addHours, startOfDay, isValid } from 'date-fns';
 
 interface GanttGridProps {
   minuteWidth: number;
   totalWidth: number;
   totalHeight: number;
+  timelineStart?: Date;
+  totalDays?: number;
 }
 
 export const GanttGrid: React.FC<GanttGridProps> = ({
   minuteWidth,
   totalWidth,
   totalHeight,
+  timelineStart: propTimelineStart,
+  totalDays: propTotalDays,
 }) => {
-  const timelineStart = useScheduleStore((state) => state.timelineStart);
-  const timelineEnd = useScheduleStore((state) => state.timelineEnd);
+  const rawTimelineStart = useScheduleStore((state) => state.timelineStart);
+  const rawTimelineEnd = useScheduleStore((state) => state.timelineEnd);
+
+  const timelineStart =
+    propTimelineStart ??
+    (isValid(rawTimelineStart) ? startOfDay(rawTimelineStart) : startOfDay(new Date()));
+  const totalDays =
+    propTotalDays ??
+    Math.max(
+      1,
+      Math.ceil(
+        ((isValid(rawTimelineEnd)
+          ? rawTimelineEnd.getTime()
+          : timelineStart.getTime() + 4 * 86400000) -
+          timelineStart.getTime()) /
+          86400000
+      )
+    );
 
   const hourWidth = minuteWidth * 60;
-  const totalHours = Math.max(24, differenceInHours(timelineEnd, timelineStart));
+  const totalHours = totalDays * 24;
 
-  const hourLines = Array.from({ length: totalHours }).map((_, idx) => {
-    const date = addHours(timelineStart, idx);
-    const hour = date.getHours();
-    const isShiftBoundary = hour % 8 === 0;
-    const isDayBoundary = hour === 0;
-    const isNightShift = hour < 8;
+  // Adaptive step for vertical grid lines
+  const step = hourWidth < 15 ? 8 : hourWidth < 40 ? 4 : hourWidth < 75 ? 2 : 1;
+  const lineCount = Math.floor(totalHours / step);
 
-    return {
-      offset: idx * hourWidth,
-      isShiftBoundary,
-      isDayBoundary,
-      isNightShift,
-    };
-  });
+  const hourLines = React.useMemo(() => {
+    return Array.from({ length: lineCount }).map((_, idx) => {
+      const hourOffset = idx * step;
+      const date = addHours(timelineStart, hourOffset);
+      const hour = date.getHours();
+      const isDayBoundary = hour === 0;
+      const isShiftBoundary = hour % 8 === 0;
+
+      return {
+        offset: hourOffset * hourWidth,
+        isShiftBoundary,
+        isDayBoundary,
+      };
+    });
+  }, [lineCount, step, timelineStart, hourWidth]);
 
   return (
     <div
-      className="absolute inset-0 pointer-events-none overflow-hidden"
+      className="absolute inset-0 pointer-events-none overflow-hidden z-0"
       style={{ width: `${totalWidth}px`, height: `${totalHeight}px` }}
     >
       {hourLines.map((col, idx) => (
-        <React.Fragment key={idx}>
-          {/* Night shift shading */}
-          {col.isNightShift && (
-            <div
-              className="absolute top-0 bottom-0 bg-slate-950/40"
-              style={{
-                left: `${col.offset}px`,
-                width: `${hourWidth}px`,
-              }}
-            />
-          )}
-
-          {/* Vertical Grid Line */}
-          <div
-            className={`absolute top-0 bottom-0 ${
-              col.isDayBoundary
-                ? 'border-r-2 border-slate-700/80 z-10'
-                : col.isShiftBoundary
-                ? 'border-r border-slate-700/50'
-                : 'border-r border-slate-800/30'
-            }`}
-            style={{
-              left: `${col.offset}px`,
-              width: '1px',
-            }}
-          />
-        </React.Fragment>
+        <div
+          key={idx}
+          className={`absolute top-0 bottom-0 ${
+            col.isDayBoundary
+              ? 'border-r-2 border-slate-700/60 z-10'
+              : col.isShiftBoundary
+              ? 'border-r border-slate-800/60'
+              : 'border-r border-slate-800/30'
+          }`}
+          style={{
+            left: `${col.offset}px`,
+            width: '1px',
+          }}
+        />
       ))}
     </div>
   );
 };
+

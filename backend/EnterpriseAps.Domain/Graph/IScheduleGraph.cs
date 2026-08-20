@@ -65,6 +65,8 @@ public interface IScheduleGraph
 
     ScheduleKpi CalculateKpis();
 
+    bool WouldCreateCycle(string operationId, IEnumerable<string> candidatePredecessors);
+
     void ResetToInitial(
         IEnumerable<Resource> resources,
         IEnumerable<WorkOrder> workOrders,

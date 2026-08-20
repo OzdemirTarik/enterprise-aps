@@ -3,6 +3,7 @@ import { useScheduleStore, isResourceMatchingCategory } from '../../store/useSch
 import { isValid, startOfDay, format } from 'date-fns';
 import { GanttTimelineRuler } from './GanttTimelineRuler';
 import { GanttSidebar } from './GanttSidebar';
+import { GanttGrid } from './GanttGrid';
 import { GanttRow } from './GanttRow';
 import { GanttDependencyOverlay } from './GanttDependencyOverlay';
 import { GanttCurrentTimeLine } from './GanttCurrentTimeLine';
@@ -43,10 +44,18 @@ export const GanttScheduler: React.FC = () => {
       ? 1.2
       : zoomLevel === 'week'
       ? 0.45
-      : 0.12; // 'month' view (1 day = ~173px)
+      : 0.12; // 'month' view (1 day = ~172.8px)
 
-  const totalMinutes = Math.max(1440, (timelineEnd.getTime() - timelineStart.getTime()) / 60000);
-  const canvasWidth = Math.max(1200, totalMinutes * minuteWidth);
+  const minDaysForZoom =
+    zoomLevel === 'month' ? 32 : zoomLevel === 'week' ? 14 : zoomLevel === 'day' ? 7 : 4;
+
+  const totalDays = Math.max(
+    minDaysForZoom,
+    Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (24 * 60 * 60 * 1000))
+  );
+  const totalHours = totalDays * 24;
+  const totalMinutes = totalHours * 60;
+  const canvasWidth = totalMinutes * minuteWidth;
 
   const resourceList = useMemo(
     () => Object.values(resources).filter((r) => isResourceMatchingCategory(r, workCenterCategory)),
@@ -64,6 +73,69 @@ export const GanttScheduler: React.FC = () => {
   const scrollToDateTrigger = useScheduleStore((s) => s.scrollToDateTrigger);
   const searchQuery = useScheduleStore((s) => s.searchQuery);
   const operations = useScheduleStore((s) => s.operations);
+  const isInitialized = useScheduleStore((s) => s.isInitialized);
+  const hasCenteredOnLoadRef = useRef(false);
+
+  // Robustly center on NOW line upon initial page load / refresh once store data & DOM layout dimensions are ready
+  React.useEffect(() => {
+    if (hasCenteredOnLoadRef.current) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const tryCenterNow = (): boolean => {
+      if (hasCenteredOnLoadRef.current) return true;
+      if (!isInitialized) return false;
+      const currentContainer = scrollContainerRef.current;
+      if (!currentContainer) return false;
+
+      const clientWidth = currentContainer.clientWidth;
+      const scrollWidth = currentContainer.scrollWidth;
+
+      // Ensure container has rendered layout dimensions and scrollable content
+      if (clientWidth <= 0 || scrollWidth <= clientWidth) {
+        return false;
+      }
+
+      const nowMs = Date.now();
+      const elapsedMinutes = (nowMs - timelineStart.getTime()) / 60000;
+      const targetLeft = elapsedMinutes * minuteWidth - clientWidth / 2;
+
+      currentContainer.scrollTo({
+        left: Math.max(0, targetLeft),
+        behavior: 'auto',
+      });
+
+      hasCenteredOnLoadRef.current = true;
+      return true;
+    };
+
+    // 1. Synchronous attempt if layout is already ready
+    if (tryCenterNow()) return;
+
+    // 2. Next animation frame attempt
+    const rafId = requestAnimationFrame(() => {
+      tryCenterNow();
+    });
+
+    // 3. ResizeObserver to catch layout completion when container or scroll dimensions become valid
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        if (tryCenterNow() && resizeObserver) {
+          resizeObserver.disconnect();
+        }
+      });
+      resizeObserver.observe(container);
+    }
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [isInitialized, minuteWidth, timelineStart]);
 
   const handleTimelineScroll = () => {
     if (scrollContainerRef.current && sidebarScrollRef.current) {
@@ -187,7 +259,7 @@ export const GanttScheduler: React.FC = () => {
     }
   }, [searchQuery, operations, minuteWidth, timelineStart]);
 
-  const totalGridHeight = Math.max(resourceList.length * ROW_HEIGHT, 600);
+  const totalGridHeight = resourceList.length * ROW_HEIGHT;
 
   return (
     <div
@@ -204,12 +276,27 @@ export const GanttScheduler: React.FC = () => {
         onMouseDown={handleCanvasMouseDown}
         className="flex-1 overflow-auto relative custom-scrollbar select-none cursor-grab active:cursor-grabbing"
       >
-        <div style={{ width: `${canvasWidth}px` }} className="relative min-h-full">
+        <div style={{ width: `${canvasWidth}px` }} className="relative">
           {/* Top Timeline Time Ruler */}
-          <GanttTimelineRuler minuteWidth={minuteWidth} canvasWidth={canvasWidth} />
+          <GanttTimelineRuler
+            minuteWidth={minuteWidth}
+            canvasWidth={canvasWidth}
+            timelineStart={timelineStart}
+            totalDays={totalDays}
+            totalHours={totalHours}
+          />
 
           {/* Gantt Rows Container */}
-          <div className="relative">
+          <div className="relative" style={{ height: `${totalGridHeight}px` }}>
+            {/* Background Grid Lines (Day & Shift columns) */}
+            <GanttGrid
+              minuteWidth={minuteWidth}
+              totalWidth={canvasWidth}
+              totalHeight={totalGridHeight}
+              timelineStart={timelineStart}
+              totalDays={totalDays}
+            />
+
             {/* Global Unified Off-Shift & Weekend Diagonal Shading Background (Zero Overdraw Layer) */}
             {isShiftOverlayActive && offShiftIntervals.length > 0 && (
               <div
@@ -267,7 +354,11 @@ export const GanttScheduler: React.FC = () => {
             )}
 
             {/* SVG Dependency Precedence Lines Overlay */}
-            <GanttDependencyOverlay minuteWidth={minuteWidth} rowHeight={ROW_HEIGHT} />
+            <GanttDependencyOverlay
+              minuteWidth={minuteWidth}
+              rowHeight={ROW_HEIGHT}
+              canvasWidth={canvasWidth}
+            />
 
             {/* Current Real-Time Indicator Line */}
             <GanttCurrentTimeLine

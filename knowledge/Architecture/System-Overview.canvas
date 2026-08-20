@@ -1,0 +1,15 @@
+{
+	"nodes":[
+		{"id":"node_ui","type":"text","text":"## 🖥️ Frontend (React 18 + TS)\n- Interactive Gantt Workstation\n- Zustand State Store\n- SignalR WebSocket Client\n- [[Workstation-Gantt-State]]","x":-1360,"y":-150,"width":300,"height":236,"color":"4"},
+		{"id":"node_backend","type":"text","text":"## ⚙️ Backend (.NET 8 Web API)\n- MediatR CQRS Pipeline\n- [[DAG-Scheduler-Engine]]\n- SignalR Notification Hub\n- [[Rest-Endpoints]]","x":0,"y":-150,"width":320,"height":220,"color":"2"},
+		{"id":"node_redis","type":"text","text":"## ⚡ Redis Cache & Locks\n- Distributed Track Locks\n- Real-time Pub/Sub\n- [[ADR-002-redis-distributed-lock]]","x":680,"y":-530,"width":280,"height":180,"color":"1"},
+		{"id":"node_db","type":"text","text":"## 🗄️ PostgreSQL / TimescaleDB\n- Work Order Persistence\n- Operation Execution History\n- Machine Telemetry & Logs","x":760,"y":240,"width":280,"height":180,"color":"3"},
+		{"id":"node_domain","type":"text","text":"## 🏭 EMS & PCBA Domain Kuralları\n- [[SMT-Lines|SMT & THT Hatları]]\n- [[Solder-Alloys-Thermal|SAC305 / SnPb Termal Cezalar]]\n- [[Feeder-Cart-Reload|Feeder Değişim Matrisi]]","x":-100,"y":360,"width":420,"height":184,"color":"5"}
+	],
+	"edges":[
+		{"id":"edge_ui_backend","fromNode":"node_ui","fromSide":"right","toNode":"node_backend","toSide":"left","label":"REST Commands / SignalR WebSocket"},
+		{"id":"edge_backend_redis","fromNode":"node_backend","fromSide":"right","toNode":"node_redis","toSide":"left","label":"Distributed Locks & Events"},
+		{"id":"edge_backend_db","fromNode":"node_backend","fromSide":"right","toNode":"node_db","toSide":"left","label":"EF Core Persistence"},
+		{"id":"edge_domain_backend","fromNode":"node_domain","fromSide":"top","toNode":"node_backend","toSide":"bottom","label":"Rules & Setup Matrices"}
+	]
+}

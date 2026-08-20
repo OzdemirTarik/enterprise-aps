@@ -1,0 +1,6 @@
+# 🤖 Görev: [Görev Başlığı]
+
+- **Departman:** `DEPT=[frontend|backend|db_dev|system]`
+- **İlgili Dosyalar:** `...`
+- **Hedef:** ...
+- **Doğrulama Kriterleri:** ...

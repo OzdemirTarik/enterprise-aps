@@ -58,7 +58,7 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarSc
       {/* Resource Rows Container with Synchronized Scroll */}
       <div
         ref={sidebarScrollRef}
-        className="flex-1 overflow-hidden divide-y divide-slate-800/60"
+        className="flex-1 overflow-hidden"
       >
         {resourceList.map((resource) => {
           const lock = locks[resource.id];
@@ -72,7 +72,7 @@ export const GanttSidebar: React.FC<GanttSidebarProps> = ({ rowHeight, sidebarSc
           return (
             <div
               key={resource.id}
-              className={`px-3.5 flex flex-col justify-center relative transition-colors box-border overflow-hidden ${
+              className={`px-3.5 flex flex-col justify-center relative transition-colors box-border overflow-hidden border-b border-slate-800/60 ${
                 isLockedByOther
                   ? 'bg-rose-950/20 border-l-4 border-rose-500'
                   : isLockedByMe
