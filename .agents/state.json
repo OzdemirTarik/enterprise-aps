@@ -21,18 +21,18 @@
   },
   "model_mapping": {
     "frontend": "Orta",
-    "backend": "Zor",
+    "backend": "Orta",
     "db_dev": "Zor",
     "tester": "Kolay",
     "system": "Kolay",
     "orchestrator": "Zor"
   },
-  "active_task": "Gantt \u015femas\u0131nda ve i\u015f istasyonlar\u0131nda proseslere/operasyonlara sol t\u0131kland\u0131\u011f\u0131nda a\u00e7\u0131lan men\u00fc/panel/\u00e7ekmece (Drawer/Modal/Context Menu) yap\u0131s\u0131n\u0131 ba\u015ftan sona analiz et. Mevcut durumu, eksikleri, fazlal\u0131klar\u0131, modern APS (\u0130leri Planlama ve \u00c7izelgeleme) standartlar\u0131na g\u00f6re nelerin eklenmesi, \u00e7\u0131kar\u0131lmas\u0131 veya g\u00fcncellenmesi gerekti\u011fini detayl\u0131 bir inceleme raporu olarak haz\u0131rla.",
+  "active_task": "PostgreSQL DateTimeKind.Unspecified hatas\u0131n\u0131 \u00e7\u00f6z: 1) backend/EnterpriseAps.Api/Program.cs dosyas\u0131n\u0131n en ba\u015f\u0131na AppContext.SetSwitch(\"Npgsql.EnableLegacyTimestampBehavior\", true); ekle. 2) backend/EnterpriseAps.Infrastructure/Persistence/ApsDbContext.cs dosyas\u0131ndaki OnModelCreating metoduna DateTime ve DateTime? converter'lar\u0131 ekle (v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc)). 3) backend/EnterpriseAps.Application/CQRS/Commands/UpdateOperationCommand.cs dosyas\u0131ndaki DateTime atamalar\u0131nda DateTimeKind.Utc ve DateTime.UtcNow kullan\u0131ld\u0131\u011f\u0131ndan emin ol. 4) 'dotnet test' \u00e7al\u0131\u015ft\u0131r ve hatas\u0131z oldu\u011funu do\u011frula.",
   "shared_contracts": {},
   "status": {
     "frontend": "DONE",
-    "backend": "IDLE",
+    "backend": "DONE",
     "db_dev": "IDLE",
-    "system": "IDLE"
+    "system": "DONE"
   }
 }

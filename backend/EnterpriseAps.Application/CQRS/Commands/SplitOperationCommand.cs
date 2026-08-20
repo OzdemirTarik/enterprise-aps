@@ -42,6 +42,11 @@ public class SplitOperationCommandHandler : IRequestHandler<SplitOperationComman
         }
 
         // Add new split operation into DB
+        newOp.PlannedStartTime = DateTime.SpecifyKind(newOp.PlannedStartTime, DateTimeKind.Utc);
+        newOp.PlannedEndTime = DateTime.SpecifyKind(newOp.PlannedEndTime, DateTimeKind.Utc);
+        if (newOp.ActualStartTime.HasValue) newOp.ActualStartTime = DateTime.SpecifyKind(newOp.ActualStartTime.Value, DateTimeKind.Utc);
+        if (newOp.ActualEndTime.HasValue) newOp.ActualEndTime = DateTime.SpecifyKind(newOp.ActualEndTime.Value, DateTimeKind.Utc);
+        
         await _context.Operations.AddAsync(newOp, cancellationToken);
 
         // Update original and affected operations in DB
@@ -54,8 +59,10 @@ public class SplitOperationCommandHandler : IRequestHandler<SplitOperationComman
         {
             var graphOp = delta.AffectedOperations.First(o => o.Id == dbOp.Id);
             dbOp.DurationMinutes = graphOp.DurationMinutes;
-            dbOp.PlannedStartTime = graphOp.PlannedStartTime;
-            dbOp.PlannedEndTime = graphOp.PlannedEndTime;
+            dbOp.PlannedStartTime = DateTime.SpecifyKind(graphOp.PlannedStartTime, DateTimeKind.Utc);
+            dbOp.PlannedEndTime = DateTime.SpecifyKind(graphOp.PlannedEndTime, DateTimeKind.Utc);
+            dbOp.ActualStartTime = graphOp.ActualStartTime.HasValue ? DateTime.SpecifyKind(graphOp.ActualStartTime.Value, DateTimeKind.Utc) : null;
+            dbOp.ActualEndTime = graphOp.ActualEndTime.HasValue ? DateTime.SpecifyKind(graphOp.ActualEndTime.Value, DateTimeKind.Utc) : null;
             dbOp.SetupDurationMinutes = graphOp.SetupDurationMinutes;
             dbOp.PrecedenceOperationIds = graphOp.PrecedenceOperationIds;
             dbOp.Status = graphOp.Status;

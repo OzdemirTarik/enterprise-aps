@@ -37,8 +37,8 @@ public class CreateResourceDowntimeCommandHandler : IRequestHandler<CreateResour
             Id = $"DT-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
             ResourceId = request.ResourceId,
             Reason = request.Reason,
-            StartTime = request.StartTime,
-            EndTime = request.EndTime,
+            StartTime = DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc),
+            EndTime = DateTime.SpecifyKind(request.EndTime, DateTimeKind.Utc),
             IsPlanned = request.IsPlanned
         };
 

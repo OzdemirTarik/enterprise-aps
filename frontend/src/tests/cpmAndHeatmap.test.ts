@@ -3,6 +3,7 @@ import { getOffShiftIntervals, getNextAvailableWorkingTime } from '../utils/shif
 import { findMagneticSnap } from '../utils/magneticSnap';
 import { detectOperationConstraints } from '../utils/constraintUtils';
 import { Operation, WorkOrder, ResourceDowntime } from '../types/schedule';
+import { test } from 'vitest';
 
 function runTests() {
   console.log('=== TEST SCENARIO 1: Critical Path CPM with 2 Independent Work Orders ===');
@@ -441,4 +442,6 @@ function runTests() {
   console.log('\nALL 7 ANALYTICS, SHIFT, SNAP, CONSTRAINT & CALENDAR UNIT TESTS PASSED!');
 }
 
-runTests();
+test('CPM and Heatmap Analytics Tests', () => {
+  runTests();
+});

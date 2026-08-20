@@ -1,5 +1,6 @@
 import { computeCriticalPath, computeResourceHeatmap } from '../utils/analytics';
 import { GanttScheduleResponse, Operation } from '../types/schedule';
+import { test } from 'vitest';
 
 async function testLiveApi() {
   console.log('=== TEST SCENARIO 3: Live API Real Data Verification ===');
@@ -54,7 +55,6 @@ async function testLiveApi() {
   console.log('✅ Live Capacity Heatmap Test Scenario 3 PASSED.');
 }
 
-testLiveApi().catch((err) => {
-  console.error('LIVE API TEST FAILED:', err);
-  process.exit(1);
+test('Live API Analytics Tests', async () => {
+  await testLiveApi();
 });

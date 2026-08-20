@@ -50,8 +50,10 @@ public class ResizeOperationCommandHandler : IRequestHandler<ResizeOperationComm
         {
             var graphOp = delta.AffectedOperations.First(o => o.Id == dbOp.Id);
             dbOp.DurationMinutes = graphOp.DurationMinutes;
-            dbOp.PlannedStartTime = graphOp.PlannedStartTime;
-            dbOp.PlannedEndTime = graphOp.PlannedEndTime;
+            dbOp.PlannedStartTime = DateTime.SpecifyKind(graphOp.PlannedStartTime, DateTimeKind.Utc);
+            dbOp.PlannedEndTime = DateTime.SpecifyKind(graphOp.PlannedEndTime, DateTimeKind.Utc);
+            dbOp.ActualStartTime = graphOp.ActualStartTime.HasValue ? DateTime.SpecifyKind(graphOp.ActualStartTime.Value, DateTimeKind.Utc) : null;
+            dbOp.ActualEndTime = graphOp.ActualEndTime.HasValue ? DateTime.SpecifyKind(graphOp.ActualEndTime.Value, DateTimeKind.Utc) : null;
             dbOp.SetupDurationMinutes = graphOp.SetupDurationMinutes;
             dbOp.Status = graphOp.Status;
         }

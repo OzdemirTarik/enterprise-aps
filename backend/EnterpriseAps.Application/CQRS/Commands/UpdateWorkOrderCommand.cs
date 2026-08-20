@@ -45,8 +45,8 @@ public class UpdateWorkOrderCommandHandler : IRequestHandler<UpdateWorkOrderComm
         wo.ProductCode = request.ProductCode;
         wo.ProductName = request.ProductName;
         wo.Quantity = request.Quantity;
-        wo.ReleaseDate = request.ReleaseDate;
-        wo.DueDate = request.DueDate;
+        wo.ReleaseDate = DateTime.SpecifyKind(request.ReleaseDate, DateTimeKind.Utc);
+        wo.DueDate = DateTime.SpecifyKind(request.DueDate, DateTimeKind.Utc);
         wo.Priority = request.Priority;
         wo.Status = request.Status;
 
@@ -60,8 +60,8 @@ public class UpdateWorkOrderCommandHandler : IRequestHandler<UpdateWorkOrderComm
             dbWo.ProductCode = wo.ProductCode;
             dbWo.ProductName = wo.ProductName;
             dbWo.Quantity = wo.Quantity;
-            dbWo.ReleaseDate = wo.ReleaseDate;
-            dbWo.DueDate = wo.DueDate;
+            dbWo.ReleaseDate = wo.ReleaseDate; // already UTC
+            dbWo.DueDate = wo.DueDate; // already UTC
             dbWo.Priority = wo.Priority;
             dbWo.Status = wo.Status;
 

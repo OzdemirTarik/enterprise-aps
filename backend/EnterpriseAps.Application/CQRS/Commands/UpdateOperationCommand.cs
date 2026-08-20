@@ -45,11 +45,24 @@ public class UpdateOperationCommandHandler : IRequestHandler<UpdateOperationComm
         op.RequiredResourceId = request.RequiredResourceId;
         op.DurationMinutes = request.DurationMinutes;
         op.SetupDurationMinutes = request.SetupDurationMinutes;
-        op.PlannedStartTime = _graph.GetNextWorkingTime(request.PlannedStartTime);
-        op.PlannedEndTime = _graph.CalculateWorkingEndTime(op.PlannedStartTime, request.SetupDurationMinutes + request.DurationMinutes);
+        var reqPlannedStartUtc = request.PlannedStartTime.Kind == DateTimeKind.Utc 
+            ? request.PlannedStartTime 
+            : DateTime.SpecifyKind(request.PlannedStartTime, DateTimeKind.Utc);
+        op.PlannedStartTime = DateTime.SpecifyKind(_graph.GetNextWorkingTime(reqPlannedStartUtc), DateTimeKind.Utc);
+        op.PlannedEndTime = DateTime.SpecifyKind(_graph.CalculateWorkingEndTime(op.PlannedStartTime, request.SetupDurationMinutes + request.DurationMinutes), DateTimeKind.Utc);
         if (Enum.TryParse<OperationStatus>(request.Status, true, out var parsedStatus))
         {
             op.Status = parsedStatus;
+            
+            if (parsedStatus == OperationStatus.InProgress)
+            {
+                op.ActualStartTime = DateTime.UtcNow;
+            }
+            else if (parsedStatus == OperationStatus.Completed)
+            {
+                if (!op.ActualStartTime.HasValue) op.ActualStartTime = DateTime.UtcNow;
+                op.ActualEndTime = DateTime.UtcNow;
+            }
         }
         op.ColorCode = request.ColorCode;
         op.IsLocked = request.IsLocked;
@@ -69,8 +82,18 @@ public class UpdateOperationCommandHandler : IRequestHandler<UpdateOperationComm
             dbOp.RequiredResourceId = op.RequiredResourceId;
             dbOp.DurationMinutes = op.DurationMinutes;
             dbOp.SetupDurationMinutes = op.SetupDurationMinutes;
-            dbOp.PlannedStartTime = op.PlannedStartTime;
-            dbOp.PlannedEndTime = op.PlannedEndTime;
+            dbOp.PlannedStartTime = op.PlannedStartTime.Kind == DateTimeKind.Utc 
+                ? op.PlannedStartTime 
+                : DateTime.SpecifyKind(op.PlannedStartTime, DateTimeKind.Utc);
+            dbOp.PlannedEndTime = op.PlannedEndTime.Kind == DateTimeKind.Utc 
+                ? op.PlannedEndTime 
+                : DateTime.SpecifyKind(op.PlannedEndTime, DateTimeKind.Utc);
+            dbOp.ActualStartTime = op.ActualStartTime.HasValue 
+                ? (op.ActualStartTime.Value.Kind == DateTimeKind.Utc ? op.ActualStartTime.Value : DateTime.SpecifyKind(op.ActualStartTime.Value, DateTimeKind.Utc)) 
+                : null;
+            dbOp.ActualEndTime = op.ActualEndTime.HasValue 
+                ? (op.ActualEndTime.Value.Kind == DateTimeKind.Utc ? op.ActualEndTime.Value : DateTime.SpecifyKind(op.ActualEndTime.Value, DateTimeKind.Utc)) 
+                : null;
             dbOp.Status = op.Status;
             dbOp.ColorCode = op.ColorCode;
             dbOp.IsLocked = op.IsLocked;
@@ -95,6 +118,8 @@ public class UpdateOperationCommandHandler : IRequestHandler<UpdateOperationComm
                 SetupDurationMinutes = o.SetupDurationMinutes,
                 PlannedStartTime = o.PlannedStartTime,
                 PlannedEndTime = o.PlannedEndTime,
+                ActualStartTime = o.ActualStartTime,
+                ActualEndTime = o.ActualEndTime,
                 Status = o.Status.ToString(),
                 ColorCode = o.ColorCode,
                 IsLocked = o.IsLocked,
@@ -119,6 +144,8 @@ public class UpdateOperationCommandHandler : IRequestHandler<UpdateOperationComm
             SetupDurationMinutes = op.SetupDurationMinutes,
             PlannedStartTime = op.PlannedStartTime,
             PlannedEndTime = op.PlannedEndTime,
+            ActualStartTime = op.ActualStartTime,
+            ActualEndTime = op.ActualEndTime,
             Status = op.Status.ToString(),
             ColorCode = op.ColorCode,
             IsLocked = op.IsLocked,

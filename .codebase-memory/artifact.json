@@ -1,11 +1,11 @@
 {
     "schema_version": 1,
-    "commit": "0f02e522dfe247718dedbcee90e9921a35045fcb",
-    "indexed_at": "2026-08-19T16:03:17Z",
+    "commit": "5f0a51ffccc408f0c98e5af038141bdfa99d96e3",
+    "indexed_at": "2026-08-20T12:41:05Z",
     "project": "home-wasa-projeler-enterprise-aps",
-    "nodes": 0,
-    "edges": 0,
-    "original_size": 102400,
-    "compressed_size": 1396,
+    "nodes": 1674,
+    "edges": 4504,
+    "original_size": 6553600,
+    "compressed_size": 921340,
     "compression_level": 3
 }
