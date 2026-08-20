@@ -21,17 +21,17 @@
   },
   "model_mapping": {
     "frontend": "Orta",
-    "backend": "Zor",
+    "backend": "Orta",
     "db_dev": "Zor",
     "tester": "Kolay",
     "system": "Kolay",
     "orchestrator": "Zor"
   },
-  "active_task": "Frontend build ve testlerini \u00e7al\u0131\u015ft\u0131r, TypeScript hatalar\u0131 ve vitest testlerinin ba\u015far\u0131yla ge\u00e7ti\u011fini do\u011frula.",
+  "active_task": "PostgreSQL DateTimeKind.Unspecified hatas\u0131n\u0131 \u00e7\u00f6z: 1) backend/EnterpriseAps.Api/Program.cs dosyas\u0131n\u0131n en ba\u015f\u0131na AppContext.SetSwitch(\"Npgsql.EnableLegacyTimestampBehavior\", true); ekle. 2) backend/EnterpriseAps.Infrastructure/Persistence/ApsDbContext.cs dosyas\u0131ndaki OnModelCreating metoduna DateTime ve DateTime? converter'lar\u0131 ekle (v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc)). 3) backend/EnterpriseAps.Application/CQRS/Commands/UpdateOperationCommand.cs dosyas\u0131ndaki DateTime atamalar\u0131nda DateTimeKind.Utc ve DateTime.UtcNow kullan\u0131ld\u0131\u011f\u0131ndan emin ol. 4) 'dotnet test' \u00e7al\u0131\u015ft\u0131r ve hatas\u0131z oldu\u011funu do\u011frula.",
   "shared_contracts": {},
   "status": {
     "frontend": "DONE",
-    "backend": "IDLE",
+    "backend": "DONE",
     "db_dev": "IDLE",
     "system": "DONE"
   }

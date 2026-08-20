@@ -36,7 +36,7 @@ public class RescheduleOperationCommandHandler : IRequestHandler<RescheduleOpera
         var delta = _graph.RescheduleOperation(
             request.OperationId,
             request.TargetResourceId,
-            request.TargetStartTime,
+            DateTime.SpecifyKind(request.TargetStartTime, DateTimeKind.Utc),
             request.AutoCascade);
 
         if (!delta.Success)
@@ -59,8 +59,10 @@ public class RescheduleOperationCommandHandler : IRequestHandler<RescheduleOpera
         {
             var graphOp = delta.AffectedOperations.First(o => o.Id == dbOp.Id);
             dbOp.RequiredResourceId = graphOp.RequiredResourceId;
-            dbOp.PlannedStartTime = graphOp.PlannedStartTime;
-            dbOp.PlannedEndTime = graphOp.PlannedEndTime;
+            dbOp.PlannedStartTime = DateTime.SpecifyKind(graphOp.PlannedStartTime, DateTimeKind.Utc);
+            dbOp.PlannedEndTime = DateTime.SpecifyKind(graphOp.PlannedEndTime, DateTimeKind.Utc);
+            dbOp.ActualStartTime = graphOp.ActualStartTime.HasValue ? DateTime.SpecifyKind(graphOp.ActualStartTime.Value, DateTimeKind.Utc) : null;
+            dbOp.ActualEndTime = graphOp.ActualEndTime.HasValue ? DateTime.SpecifyKind(graphOp.ActualEndTime.Value, DateTimeKind.Utc) : null;
             dbOp.SetupDurationMinutes = graphOp.SetupDurationMinutes;
             dbOp.Status = graphOp.Status;
         }

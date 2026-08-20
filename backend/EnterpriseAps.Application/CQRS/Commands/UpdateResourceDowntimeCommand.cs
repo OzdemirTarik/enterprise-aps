@@ -42,8 +42,8 @@ public class UpdateResourceDowntimeCommandHandler : IRequestHandler<UpdateResour
                 Id = request.Id,
                 ResourceId = request.ResourceId,
                 Reason = request.Reason,
-                StartTime = request.StartTime,
-                EndTime = request.EndTime,
+                StartTime = DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc),
+                EndTime = DateTime.SpecifyKind(request.EndTime, DateTimeKind.Utc),
                 IsPlanned = request.IsPlanned
             };
             await _context.ResourceDowntimes.AddAsync(existing, cancellationToken);
@@ -52,8 +52,8 @@ public class UpdateResourceDowntimeCommandHandler : IRequestHandler<UpdateResour
         {
             existing.ResourceId = request.ResourceId;
             existing.Reason = request.Reason;
-            existing.StartTime = request.StartTime;
-            existing.EndTime = request.EndTime;
+            existing.StartTime = DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc);
+            existing.EndTime = DateTime.SpecifyKind(request.EndTime, DateTimeKind.Utc);
             existing.IsPlanned = request.IsPlanned;
         }
 
@@ -62,8 +62,8 @@ public class UpdateResourceDowntimeCommandHandler : IRequestHandler<UpdateResour
             Id = request.Id,
             ResourceId = request.ResourceId,
             Reason = request.Reason,
-            StartTime = request.StartTime,
-            EndTime = request.EndTime,
+            StartTime = DateTime.SpecifyKind(request.StartTime, DateTimeKind.Utc),
+            EndTime = DateTime.SpecifyKind(request.EndTime, DateTimeKind.Utc),
             IsPlanned = request.IsPlanned
         };
 

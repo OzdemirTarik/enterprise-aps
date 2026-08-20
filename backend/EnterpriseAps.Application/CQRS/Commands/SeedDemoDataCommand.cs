@@ -45,7 +45,7 @@ public class SeedDemoDataCommandHandler : IRequestHandler<SeedDemoDataCommand, b
 
     public static (List<Resource>, List<WorkOrder>, List<Operation>, List<SetupMatrixItem>, List<ResourceDowntime>) GenerateIndustrialDemoData()
     {
-        var baseDate = DateTime.UtcNow.Date.AddHours(8); // Shift 1 start at 08:00 AM
+        var baseDate = DateTime.SpecifyKind(DateTime.UtcNow.Date.AddHours(8), DateTimeKind.Utc); // Shift 1 start at 08:00 AM
 
         // 1. EMS / PCBA Production Work Centers
         var resources = new List<Resource>

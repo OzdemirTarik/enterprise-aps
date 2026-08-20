@@ -55,6 +55,8 @@ public class DeleteOperationCommandHandler : IRequestHandler<DeleteOperationComm
                     SetupDurationMinutes = o.SetupDurationMinutes,
                     PlannedStartTime = o.PlannedStartTime,
                     PlannedEndTime = o.PlannedEndTime,
+                    ActualStartTime = o.ActualStartTime,
+                    ActualEndTime = o.ActualEndTime,
                     Status = o.Status.ToString(),
                     ColorCode = o.ColorCode,
                     IsLocked = o.IsLocked,

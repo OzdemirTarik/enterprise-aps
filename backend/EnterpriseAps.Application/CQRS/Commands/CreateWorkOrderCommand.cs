@@ -56,14 +56,14 @@ public class CreateWorkOrderCommandHandler : IRequestHandler<CreateWorkOrderComm
             ProductCode = request.ProductCode,
             ProductName = request.ProductName,
             Quantity = request.Quantity,
-            ReleaseDate = request.ReleaseDate,
-            DueDate = request.DueDate,
+            ReleaseDate = DateTime.SpecifyKind(request.ReleaseDate, DateTimeKind.Utc),
+            DueDate = DateTime.SpecifyKind(request.DueDate, DateTimeKind.Utc),
             Priority = request.Priority,
             Status = "Planned"
         };
 
         var createdOps = new List<Operation>();
-        DateTime currentChainTime = request.ReleaseDate;
+        DateTime currentChainTime = DateTime.SpecifyKind(request.ReleaseDate, DateTimeKind.Utc);
         string? lastOpId = null;
 
         if (request.Operations != null && request.Operations.Count > 0)
@@ -86,8 +86,8 @@ public class CreateWorkOrderCommandHandler : IRequestHandler<CreateWorkOrderComm
                     RequiredResourceId = opInput.RequiredResourceId,
                     DurationMinutes = opInput.DurationMinutes,
                     SetupDurationMinutes = setup,
-                    PlannedStartTime = _graph.GetNextWorkingTime(currentChainTime),
-                    PlannedEndTime = _graph.CalculateWorkingEndTime(_graph.GetNextWorkingTime(currentChainTime), setup + opInput.DurationMinutes),
+                    PlannedStartTime = DateTime.SpecifyKind(_graph.GetNextWorkingTime(currentChainTime), DateTimeKind.Utc),
+                    PlannedEndTime = DateTime.SpecifyKind(_graph.CalculateWorkingEndTime(_graph.GetNextWorkingTime(currentChainTime), setup + opInput.DurationMinutes), DateTimeKind.Utc),
                     Status = OperationStatus.Planned,
                     ColorCode = opInput.ColorCode,
                     PrecedenceOperationIds = lastOpId != null ? new List<string> { lastOpId } : new List<string>()

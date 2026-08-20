@@ -32,7 +32,7 @@ public class ScheduleGraphTests
                 ReleaseDate = _baseTime,
                 DueDate = _baseTime.AddDays(2),
                 Priority = 1,
-                Status = WorkOrderStatus.Released
+                Status = "Released"
             },
             new WorkOrder
             {
@@ -44,7 +44,7 @@ public class ScheduleGraphTests
                 ReleaseDate = _baseTime,
                 DueDate = _baseTime.AddDays(3),
                 Priority = 2,
-                Status = WorkOrderStatus.Released
+                Status = "Released"
             }
         };
 
@@ -146,7 +146,7 @@ public class ScheduleGraphTests
         var (resources, workOrders, operations, setupMatrices, downtimes, shifts) = CreateIndustrialSetup();
         _graph.Initialize(resources, workOrders, operations, setupMatrices, downtimes, shifts);
 
-        var newStartTime = _baseTime.AddHours(4); // 08:00 -> 12:00
+        var newStartTime = _baseTime.AddHours(2); // 08:00 -> 10:00
 
         // Act
         var delta = _graph.RescheduleOperation("OP-01-SMT", "SMT-01", newStartTime, autoCascade: true);
